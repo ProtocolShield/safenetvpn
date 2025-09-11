@@ -1,13 +1,12 @@
 import 'dart:async';
-
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
-import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:safenetvpn/Repository/authRepo.dart';
-import 'package:safenetvpn/Repository/homeRepo.dart' show HomeRepo;
 import 'package:safenetvpn/Views/bottomnav/bottomnav.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:safenetvpn/Views/onboarding/onboarding1.dart';
-import 'package:get/get.dart';
+import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:safenetvpn/Repository/homeRepo.dart' show HomeRepo;
 
 class Splash extends StatefulWidget {
   const Splash({super.key});
@@ -26,7 +25,7 @@ class _SplashState extends State<Splash> {
     super.initState();
 
     // Animate bar & text
-    percentTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+    percentTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       setState(() {
         visualPercent += 0.02; // Bar fill speed
         if (displayPercent < 0.10) {
@@ -42,6 +41,7 @@ class _SplashState extends State<Splash> {
 
     final repo = Get.put<HomeRepo>(HomeRepo());
     final repo1 = Get.put<AuthRepo>(AuthRepo());
+  
     repo.getServers(true);
     repo.startGettingStages();
     repo.myKillSwitch();
@@ -49,15 +49,13 @@ class _SplashState extends State<Splash> {
     repo1.getUser(context);
     repo.loadserverFromStorage();
     repo.getPlans();
+    repo.getPremium();
 
     Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
-      // Directly proceed to login status without network connectivity checks
       checkLoginStatus();
     });
   }
-
-  //ved connectivity checks: we no longer block navigation on lack of internet.
 
   Future<void> checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
@@ -82,8 +80,8 @@ class _SplashState extends State<Splash> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            const SizedBox(height: 100),
             Image.asset(
               'assets/images/safenetlogo.png',
               fit: BoxFit.cover,
@@ -95,9 +93,10 @@ class _SplashState extends State<Splash> {
               fit: BoxFit.cover,
               scale: 3.0,
             ),
-            const SizedBox(height: 120),
+            const SizedBox(height: 50),
 
-            // Progress bar centered vertically
+            // Progress bar
+            Spacer(),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -107,15 +106,18 @@ class _SplashState extends State<Splash> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
+
+            // Bottom text
             const Text(
-              "Initializing Secure Connection",
+              "Initializing Secure Connection..",
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
+                color: Colors.grey,
+                fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -140,8 +142,12 @@ class PercentageProgressBar extends StatelessWidget {
       lineHeight: 10.0,
       percent: visualPercent.clamp(0.0, 1.0),
       backgroundColor: const Color(0xFF1E1E1E),
-      progressColor: Colors.purple.withOpacity(0.5),
       barRadius: const Radius.circular(8),
+      linearGradient: const LinearGradient(
+        colors: [Color(0xFF0072FF), Colors.purple],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ),
     );
   }
 }

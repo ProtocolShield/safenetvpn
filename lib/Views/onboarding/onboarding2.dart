@@ -18,12 +18,14 @@ class Onboarding2 extends StatelessWidget {
               scale: 3.5,
             ),
             SizedBox(height: 20),
-            Text(
-              "Keep your data private and secure \n every time you connect.",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 14,
+            Center(
+              child: Text(
+                "Connect to high-speed servers worldwide for streaming, gaming, and browsing without limits.",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 40),
@@ -85,6 +87,8 @@ class Onboarding2 extends StatelessWidget {
                       ),
                     ),
                     Spacer(),
+                    Image.asset("assets/images/forward.png", scale: 3),
+                    SizedBox(width: 8),
                   ],
                 ),
               ),

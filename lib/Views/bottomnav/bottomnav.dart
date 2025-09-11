@@ -1,12 +1,11 @@
-import 'package:eva_icons_flutter/eva_icons_flutter.dart' show EvaIcons;
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:safenetvpn/Repository/authRepo.dart';
-import 'package:safenetvpn/Repository/homeRepo.dart' show HomeRepo;
-import 'package:safenetvpn/Views/auth/auth.dart';
 import 'package:safenetvpn/Views/server/serverview.dart';
 import 'package:safenetvpn/Views/settings/settings.dart';
 import 'package:safenetvpn/Views/vpnScreen/vpnscreen.dart';
+import 'package:safenetvpn/Repository/homeRepo.dart' show HomeRepo;
+import 'package:eva_icons_flutter/eva_icons_flutter.dart' show EvaIcons;
 
 class Bottomnav extends StatefulWidget {
   const Bottomnav({super.key});

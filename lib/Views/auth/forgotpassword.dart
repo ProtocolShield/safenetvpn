@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:safenetvpn/Repository/authRepo.dart';
 import 'package:safenetvpn/Views/auth/auth.dart';
 
@@ -8,7 +9,7 @@ class ForgotPassword extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  var provider = Get.put<AuthRepo>(AuthRepo());
+    var provider = Get.put<AuthRepo>(AuthRepo());
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -42,27 +43,24 @@ class ForgotPassword extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  const Expanded(
-                    child: Text(
-                      'Forgot Password',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  SizedBox(width: 40), // For symmetry
                 ],
               ),
             ),
 
+             Text(
+                'Forgot Password?',
+                style: GoogleFonts.daysOne(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+          
             const SizedBox(height: 20),
             Text(
               "Please enter your email we will send you password reset link to your email",
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: 40),
@@ -105,25 +103,27 @@ class ForgotPassword extends StatelessWidget {
                     colors: [Colors.blue, Colors.purple],
                   ),
                 ),
-                child: provider.isloading.value ? SizedBox(
-                  height: 18,
-                  width: 18,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 5,
-                    ),
-                  ),
-                ) : Center(
-                  child: Text(
-                    "Submit",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
+                child: provider.isloading.value
+                    ? SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 5,
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          "Submit",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
               ),
             ),
 

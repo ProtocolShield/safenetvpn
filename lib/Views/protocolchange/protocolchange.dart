@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:safenetvpn/Repository/homeRepo.dart';
 
 class ProtocolChange extends StatelessWidget {
@@ -34,12 +35,12 @@ class ProtocolChange extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Select Protocol',
-                          style: TextStyle(
+                          style: GoogleFonts.daysOne(
                             color: Colors.white,
-                            fontSize: 26,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                           textAlign: TextAlign.center,
@@ -52,7 +53,7 @@ class ProtocolChange extends StatelessWidget {
 
                 // Auto Select Protocol
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
                   child: Row(
                     children: [
                       Image.asset("assets/images/autoselectprotocol.png", scale: 4),

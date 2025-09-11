@@ -30,13 +30,13 @@ class AuthRepo extends GetxController {
 
   void setAuthView(bool isSignUp) {
     toggleAuthView.value = isSignUp;
-  update();
+    update();
   }
 
   void login(BuildContext context) async {
     try {
-isloading.value = true;
-  update();
+      isloading.value = true;
+      update();
       var headers = {'Accept': 'application/json'};
       var response = await http.post(
         Uri.parse(Defaults.LOGIN_URL),
@@ -47,8 +47,8 @@ isloading.value = true;
         },
       );
 
-  var data = jsonDecode(response.body);
-  log("login response $data");
+      var data = jsonDecode(response.body);
+      log("login response $data");
       if (data["status"] == true) {
         // Handle successful login
         SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -59,17 +59,17 @@ isloading.value = true;
         await preferences.setString('password', passwordController.text);
         await preferences.setString('user_id', data['user']['id'].toString());
         await preferences.setString('access_token', data["access_token"]);
-isloading.value = false;
+        isloading.value = false;
 
-  update();
+        update();
         emailController.clear();
         passwordController.clear();
-  var ref = Get.find<HomeRepo>();
-        
+        var ref = Get.find<HomeRepo>();
+
         ref.onItemTapped(0);
         update();
-          isloading.value = false;
-      update();
+        isloading.value = false;
+        update();
 
         Navigator.of(
           context,
@@ -83,13 +83,13 @@ isloading.value = false;
           data["message"] ?? "Login failed",
           Colors.red,
         );
-      isloading.value = false;
-    update();
+        isloading.value = false;
+        update();
       }
     } catch (error) {
       log("Login failed: $error");
-        isloading.value = false;
-  update();
+      isloading.value = false;
+      update();
       showCustomSnackBar(
         context,
         EvaIcons.alertCircle,
@@ -97,14 +97,14 @@ isloading.value = false;
         "An error occurred during login",
         Colors.red,
       );
-
     }
   }
 
   void signup(BuildContext context) async {
     try {
-isloading.value = true;
-  update();
+      isloading.value = true;
+      update();
+
       var headers = {'Accept': 'application/json'};
       var response = await http.post(
         Uri.parse(Defaults.SIGN_UP_URL),
@@ -115,12 +115,14 @@ isloading.value = true;
           "password": passwordController.text,
         },
       );
+      log(response.body);
       var data = jsonDecode(response.body);
       log("Data $data");
+      
       if (data["status"] == true) {
-          log("Data $data");
-isloading.value = false;
-  update();
+        log("Data $data");
+        isloading.value = false;
+        update();
 
         usernameController.clear();
         emailController.clear();
@@ -130,21 +132,21 @@ isloading.value = false;
           context,
           EvaIcons.checkmarkCircle,
           "Success",
-          "Signup successful u can login now",
+          "Signup successful you can login now",
           Colors.green,
         );
       }
     } catch (error) {
       log("Signup failed: $error");
-isloading.value = false;
-  update();
+      isloading.value = false;
+      update();
     }
   }
 
   void forgotPassword(BuildContext context) async {
     try {
-isloading.value = true;
-  update();
+      isloading.value = true;
+      update();
       var headers = {'Accept': 'application/json'};
       var response = await http.post(
         Uri.parse(Defaults.FORGOT_PASSWORD_URL),
@@ -153,8 +155,8 @@ isloading.value = true;
       );
       var data = jsonDecode(response.body);
       if (data["status"] == true) {
-isloading.value = false;
-  update();
+        isloading.value = false;
+        update();
         emailController.clear();
         log("Forgot password email sent: $data");
         showCustomSnackBar(
@@ -165,13 +167,13 @@ isloading.value = false;
           Colors.green,
         );
       } else {
-isloading.value = false;
-  update();
+        isloading.value = false;
+        update();
       }
     } catch (error) {
-  log("Forgot password failed: $error");
-isloading.value = false;
-  update();
+      log("Forgot password failed: $error");
+      isloading.value = false;
+      update();
     }
   }
 
@@ -208,7 +210,7 @@ isloading.value = false;
       if (data['status'] == true) {
         user = UserResponse.fromJson(data);
         log("User is that $user");
-  update();
+        update();
       } else {
         log("Failed to retrieve user data: ${data['message']}");
       }
@@ -227,7 +229,7 @@ isloading.value = false;
   Future<void> feedbackStore(BuildContext context) async {
     try {
       isloading.value = true;
-  update();
+      update();
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('access_token');
       var headers = {'Authorization': 'Bearer $token'};
@@ -247,7 +249,7 @@ isloading.value = false;
         feedbackEmailController.clear();
         feedbackMessageController.clear();
         isloading.value = false;
-  update();
+        update();
         showCustomSnackBar(
           context,
           Icons.check_circle,
@@ -266,8 +268,8 @@ isloading.value = false;
       }
     } catch (error) {
       log("Error in feedbackStore: $error");
-isloading.value = false;
-  update();
+      isloading.value = false;
+      update();
       showCustomSnackBar(
         context,
         Icons.error,

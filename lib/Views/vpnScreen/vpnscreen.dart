@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:safenetvpn/Views/premium/premium.dart';
 import 'package:safenetvpn/Widgets/connectionTimer.dart';
-import 'package:safenetvpn/Repository/homeRepo.dart' show HomeRepo, VpnConnectedStates;
-
+import 'package:safenetvpn/Repository/homeRepo.dart'
+    show HomeRepo, VpnConnectedStates;
 
 class VpnScreen extends StatefulWidget {
   const VpnScreen({super.key});
@@ -14,7 +14,6 @@ class VpnScreen extends StatefulWidget {
 }
 
 class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
-
   int selectedTabIndex = 0;
 
   @override
@@ -52,7 +51,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                           Row(
                             children: [
                               Center(
-                                child: Image.asset('assets/logo.png', scale: 5),
+                                child: Image.asset('assets/icon/icon.png', scale: 5),
                               ),
                               const SizedBox(width: 12),
                               Column(
@@ -80,22 +79,28 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const Premium()),
+                                  builder: (context) => const Premium(),
+                                ),
                               );
                             },
-                            child: Image.asset("assets/images/premium.png", scale: 4)),
+                            child: Image.asset(
+                              "assets/images/premium.png",
+                              scale: 4.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                
+
                     // Server Selection
                     GestureDetector(
                       onTap: () => provider.onItemTapped(1),
                       child: Container(
+                        height: 60,
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
+                          horizontal: 20.0,
+                          vertical: 2.0,
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1A1A1A),
@@ -110,47 +115,72 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                         ),
                         child: Row(
                           children: [
-                            Image.asset(
-                              "assets/images/globe.png",
-                              scale: 4,
-                            ),
+                            provider.vpnConnectionState ==
+                                    VpnConnectedStates.connected
+                                ? CachedNetworkImage(
+                                    imageUrl: provider
+                                        .servers[provider
+                                            .selectedServerIndex
+                                            .value]
+                                        .image,
+                                    height: 30,
+                                    width: 30,
+                                  )
+                                : Image.asset(
+                                    "assets/images/globe.png",
+                                    height: 20,
+                                  ),
                             const SizedBox(width: 15),
                             Expanded(
-                              child:  Column(
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   if (provider.vpnConnectionState.value ==
                                       VpnConnectedStates.connected) ...[
                                     Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
                                       children: [
-                                        CachedNetworkImage(
-                                       imageUrl:    provider
-                                                  .servers[provider
-                                                      .selectedServerIndex.value]
-                                                  .image ,
-                                          height: 15,
-                                        ),
-                                        const SizedBox(width: 10),
                                         Text(
                                           provider
-                                                  .servers[provider
-                                                      .selectedServerIndex.value]
-                                                  .name ,
+                                              .servers[provider
+                                                  .selectedServerIndex
+                                                  .value]
+                                              .name,
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
                                     ),
                                     const SizedBox(height: 2),
-                                    Text(
-                                      "IP ${provider.servers[provider.selectedServerIndex.value].subServers[provider.selectedSubServerIndex.value].vpsServer.ipAddress}",
-                                      style: const TextStyle(
-                                        color: Color(0xFF888888),
-                                        fontSize: 12,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "IP : ",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          provider
+                                              .servers[provider
+                                                  .selectedServerIndex
+                                                  .value]
+                                              .subServers[provider
+                                                  .selectedSubServerIndex
+                                                  .value]
+                                              .vpsServer
+                                              .ipAddress,
+                                          style: const TextStyle(
+                                            color: Color(0xFF888888),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ] else ...[
                                     const Text(
@@ -163,43 +193,14 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                                     ),
                                   ],
                                 ],
-                              )),
-                          
-                            if (provider.vpnConnectionState.value ==
-                                VpnConnectedStates.connected) ...[
-                              // Signal strength bars
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 3,
-                                    height: 8,
-                                    margin: const EdgeInsets.only(right: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green,
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 3,
-                                    height: 12,
-                                    margin: const EdgeInsets.only(right: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green,
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 3,
-                                    height: 16,
-                                    margin: const EdgeInsets.only(right: 10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green,
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                ],
                               ),
-                            ],
+                            ),
+
+                            // if (provider.vpnConnectionState.value ==
+                            //     VpnConnectedStates.connected) ...[
+                            //   // Signal strength bars
+
+                            // ],
                             const Icon(
                               Icons.arrow_forward_ios,
                               color: Color(0xFF888888),
@@ -209,20 +210,20 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                         ),
                       ),
                     ),
-                
+
                     const SizedBox(height: 20),
-                
-                    // Speed Stats
-                      Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 17),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Upload
-                        Container(
-                            padding: EdgeInsets.symmetric(
+
+                    // Upload
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        SizedBox(
+                          width: 150, // fixed width
+                          child: Container(
+                            height: 64,
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 12.0,
-                              vertical: 8.0,
+                              vertical: 12.0,
                             ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF1A1A1A),
@@ -238,7 +239,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(4),
                                   decoration: const BoxDecoration(
                                     color: Colors.orange,
                                     shape: BoxShape.circle,
@@ -249,7 +250,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                                     size: 18,
                                   ),
                                 ),
-                                const SizedBox(width: 15),
+                                const SizedBox(width: 8),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -287,12 +288,15 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                
-                          // Download
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.0,
-                              vertical: 8.0,
+                        ),
+                        // Download
+                        SizedBox(
+                          width: 150, // same fixed width
+                          child: Container(
+                            height: 64,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10.0,
+                              vertical: 12.0,
                             ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF1A1A1A),
@@ -308,7 +312,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                             child: Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(4),
                                   decoration: const BoxDecoration(
                                     color: Colors.green,
                                     shape: BoxShape.circle,
@@ -319,7 +323,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                                     size: 18,
                                   ),
                                 ),
-                                const SizedBox(width: 15),
+                                const SizedBox(width: 8),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -337,7 +341,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                                           TextSpan(
                                             text: provider.downloadSpeed.value,
                                             style: const TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 14,
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -346,7 +350,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                                             text: " Kb/s",
                                             style: TextStyle(
                                               color: Color(0xFF888888),
-                                              fontSize: 12,
+                                              fontSize: 14,
                                             ),
                                           ),
                                         ],
@@ -357,12 +361,12 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                               ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                
+
                     SizedBox(height: 20),
-                
+
                     // Connected Time
                     const Text(
                       "Connected Time",
@@ -373,7 +377,8 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    provider.vpnConnectionState.value == VpnConnectedStates.connected
+                    provider.vpnConnectionState.value ==
+                            VpnConnectedStates.connected
                         ? ConnectionTimer()
                         : const Text(
                             "00:00:00",
@@ -383,7 +388,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                
+
                     SizedBox(height: 20),
                     // Connection Button
                     GestureDetector(
@@ -391,43 +396,61 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Pulse animation for connected state
+                          // Pulse animation for different states
                           if (provider.vpnConnectionState.value ==
                               VpnConnectedStates.connected)
                             Container(
-                              width: 200,
-                              height: 200,
+                              width: 180,
+                              height: 180,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Colors.green.withValues(alpha: 0.2),
+                                color: Colors.green.withOpacity(0.2),
+                              ),
+                            )
+                          else if (provider.vpnConnectionState.value ==
+                              VpnConnectedStates.connecting)
+                            Container(
+                              width: 180,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.orange.withOpacity(0.2),
+                              ),
+                            )
+                          else
+                            Container(
+                              width: 180,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.red.withOpacity(0.2),
                               ),
                             ),
                           // Outer glow ring
-                          Container(
-                            width: 180,
-                            height: 180,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                                    color:
-                                  (provider.vpnConnectionState.value ==
-                                              VpnConnectedStates.connected
-                                          ? Colors.green
-                                          : provider.vpnConnectionState.value ==
-                                                VpnConnectedStates.connecting
-                                          ? Colors.orange
-                                          : Colors.red)
-                                      .withValues(alpha: 0.1),
-                            ),
-                          ),
+                          // Container(
+                          //   width: ,
+                          //   height: 150,
+                          //   decoration: BoxDecoration(
+                          //     shape: BoxShape.circle,
+                          //     color:
+                          //         (provider.vpnConnectionState.value ==
+                          //                     VpnConnectedStates.connected
+                          //                 ? Colors.green
+                          //                 : provider.vpnConnectionState.value ==
+                          //                       VpnConnectedStates.connecting
+                          //                 ? Colors.orange
+                          //                 : Colors.red)
+                          //             .withValues(alpha: 0.1),
+                          //   ),
+                          // ),
                           // Main button
                           GestureDetector(
                             onTap: () async {
                               await provider.toggleVpn(context);
-                         
                             },
                             child: Container(
-                              width: 120,
-                              height: 120,
+                              width: 140,
+                              height: 140,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
@@ -454,14 +477,16 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                                         (provider.vpnConnectionState.value ==
                                                     VpnConnectedStates.connected
                                                 ? Colors.green
-                                                : provider.vpnConnectionState.value ==
+                                                : provider
+                                                          .vpnConnectionState
+                                                          .value ==
                                                       VpnConnectedStates
                                                           .connecting
                                                 ? Colors.orange
                                                 : Colors.red)
                                             .withValues(alpha: 0.4),
-                                    blurRadius: 25,
-                                    spreadRadius: 5,
+                                    blurRadius: 3,
+                                    spreadRadius: 3,
                                   ),
                                 ],
                               ),
@@ -469,26 +494,30 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                                   provider.vpnConnectionState.value ==
                                       VpnConnectedStates.connecting
                                   ? SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 5,
+                                      height: 24,
+                                      width: 24,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 5,
+                                        ),
                                       ),
+                                    )
+                                  : Image.asset(
+                                      "assets/images/power.png",
+                                      scale: 4,
                                     ),
-                                  )
-                                  : Image.asset("assets/images/power.png", scale: 4,)
                             ),
                           ),
                         ],
                       ),
                     ),
-                
+
                     const SizedBox(height: 20),
-                
+
                     // Status Text
-                    if (provider.vpnConnectionState.value == VpnConnectedStates.connecting)
+                    if (provider.vpnConnectionState.value ==
+                        VpnConnectedStates.connecting)
                       const Text(
                         "Connecting..",
                         style: TextStyle(

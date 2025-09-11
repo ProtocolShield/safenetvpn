@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:safenetvpn/Repository/homeRepo.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class Serverview extends StatefulWidget {
@@ -17,7 +19,6 @@ class _ServerviewState extends State<Serverview> {
   final List<String> filterTabs = [
     "All Servers",
     "Premium",
-    "Favourites",
     "Free",
   ];
 
@@ -30,21 +31,21 @@ class _ServerviewState extends State<Serverview> {
           children: [
             // Header
             SizedBox(height: 20),
-            const Text(
+            Text(
               "Select Server",
-              style: TextStyle(
+              style: GoogleFonts.daysOne(
                 color: Colors.white,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'Poppins',
               ),
             ),
             SizedBox(height: 20),
 
             // Search Bar
             Container(
+              height: 50,
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
                 borderRadius: BorderRadius.circular(12),
@@ -54,23 +55,35 @@ class _ServerviewState extends State<Serverview> {
                   Expanded(
                     child: TextField(
                       onChanged: (value) {
-                        provider.setSearchText(value);
+                        provider.setSearchText(
+                          value,
+                          filterTabs[selectedFilterIndex],
+                        ); // pass current tab
                       },
-                      onSubmitted: (_) {
-                        if (provider.searchText.value.isEmpty) {
-                          provider.filterServers(); // force reset when cleared
-                        }
-                      },
+                      // onSubmitted: (_) {
+                      //   if (provider.searchText.value.isEmpty) {
+                      //     provider.filterServers(); // force reset when cleared
+                      //   }
+                      // },
+                      cursorColor: Colors.white,
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
                         hintText: "Search",
-                        hintStyle: TextStyle(color: Color(0xFF888888)),
+
+                        hintStyle: TextStyle(
+                          color: Color(0xFF888888),
+                          fontSize: 14,
+                        ),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                       ),
                     ),
                   ),
-                  const Icon(Icons.search, color: Color(0xFF888888), size: 20),
+                  const Icon(
+                    EvaIcons.search,
+                    color: Color(0xFF888888),
+                    size: 20,
+                  ),
                 ],
               ),
             ),
@@ -85,7 +98,14 @@ class _ServerviewState extends State<Serverview> {
                 itemBuilder: (context, index) {
                   bool isSelected = selectedFilterIndex == index;
                   return GestureDetector(
-                    onTap: () {},
+                    onTap: () {
+                      setState(() {
+                        selectedFilterIndex = index;
+                      });
+                      provider.filterServers(
+                        filterTabs[index],
+                      ); // pass tab type
+                    },
                     child: Container(
                       margin: const EdgeInsets.only(right: 12),
                       padding: const EdgeInsets.symmetric(
@@ -93,11 +113,14 @@ class _ServerviewState extends State<Serverview> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Colors.purple, Colors.blue],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        gradient: isSelected
+                            ? const LinearGradient(
+                                colors: [Colors.purple, Colors.blue],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              )
+                            : null,
+                        color: isSelected ? null : const Color(0xFF1A1A1A),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
@@ -141,101 +164,120 @@ class _ServerviewState extends State<Serverview> {
                         child: Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
+                            horizontal: 15,
                             vertical: 17,
-
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF1A1A1A),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               // Flag
-                              Center(
-                                child: CachedNetworkImage(imageUrl: server.image, height: 20,),
-                              ),
-
-                              const SizedBox(width: 16),
-
-                              // Country Name
-                              Expanded(
-                                child: Text(
-                                  server.name,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    // // Highlight if selected
-                                    // backgroundColor:
-                                    //     provider.selectedServerIndex ==
-                                    //         originalIndex
-                                    //     ? Colors.green.withOpacity(0.2)
-                                    //     : Colors.transparent,
+                              Row(
+                                children: [
+                                  Center(
+                                    child: CachedNetworkImage(
+                                      imageUrl: server.image,
+                                      height: 20,
+                                    ),
                                   ),
-                                ),
+                                  
+                                  const SizedBox(width: 10),
+                                  
+                                  // Country Name
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        server.name,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      ShaderMask(
+                                        shaderCallback: (Rect bounds) {
+                                          return const LinearGradient(
+                                            colors: [Colors.purple, Colors.blue],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ).createShader(
+                                            Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                                          );
+                                        },
+                                        blendMode: BlendMode.srcIn,
+                                        child: Text(
+                                          server.type,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
 
                               // Signal Strength
                               Row(
                                 children: [
-                                  Icon(
-                                    Icons.speed,
-                                    color: Colors.green,
-                                    size: 16,
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.speed,
+                                        color: Colors.green,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        "${server.subServers[provider.selectedSubServerIndex.value].vpsServer.latency} ms",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    "${server.subServers[provider.selectedSubServerIndex.value].vpsServer.latency} ms",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
+                                  
+                                  const SizedBox(width: 5),
+                                  
+                                  // Connect Button
+                                  GestureDetector(
+                                    onTap: () {},
+                                    child: Container(
+                                      width: 24,
+                                      height: 24,
+                                      padding: EdgeInsets.all(3.0),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Color(0xFF3A3A3A),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child:
+                                          provider.selectedServerIndex ==
+                                              originalIndex
+                                          ? Container(
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    Colors.blue,
+                                                    Colors.purple,
+                                                  ],
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                            )
+                                          : null,
                                     ),
                                   ),
                                 ],
-                              ),
-
-                              const SizedBox(width: 16),
-
-                              // Connect Button
-                              GestureDetector(
-                                onTap: () {},
-                                child: Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color:
-                                          provider.selectedServerIndex ==
-                                              originalIndex
-                                          ? Colors.green
-                                          : Colors.grey,
-                                      width: 2,
-                                    ),
-                                    color:
-                                        provider.selectedServerIndex ==
-                                            originalIndex
-                                        ? Colors.green.withValues(alpha: 0.3)
-                                        : Colors.transparent,
-                                  ),
-                                  child:
-                                      provider.selectedServerIndex ==
-                                          originalIndex
-                                      ? Container(
-                                          padding: EdgeInsets.all(36.0),
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                Colors.blue,
-                                                Colors.purple,
-                                              ],
-                                            ),
-                                            shape: BoxShape.circle,
-                                          ),
-                                        )
-                                      : null,
-                                ),
                               ),
                             ],
                           ),

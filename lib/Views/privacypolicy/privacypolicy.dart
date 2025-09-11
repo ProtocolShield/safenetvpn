@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Privacypolicy extends StatelessWidget {
   const Privacypolicy({super.key});
@@ -37,14 +38,13 @@ class Privacypolicy extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Privacy Policy',
-                          style: TextStyle(
+                          style: GoogleFonts.daysOne(
                             color: Colors.white,
-                            fontSize: 28,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'Poppins',
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -58,7 +58,7 @@ class Privacypolicy extends StatelessWidget {
                     'Effective Date: February 10, 2025',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Poppins',
                     ),
@@ -73,7 +73,7 @@ class Privacypolicy extends StatelessWidget {
                           '1. Introduction',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
                           ),
@@ -83,7 +83,7 @@ class Privacypolicy extends StatelessWidget {
                           'SafeNet VPN is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our services.',
                           style: TextStyle(
                             color: Colors.grey.shade400,
-                            fontSize: 16,
+                            fontSize: 12,
                             fontFamily: 'Poppins',
                           ),
                         ),
@@ -93,7 +93,7 @@ class Privacypolicy extends StatelessWidget {
                           '2. Information We Collect',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
                           ),
@@ -121,23 +121,25 @@ class Privacypolicy extends StatelessWidget {
                           '3. How We Use Your Information',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
                           ),
                         ),
                         const SizedBox(height: 8),
                         Bullet(
-                        title:   'To provide and maintain our VPN services.',
+                          title: 'To provide and maintain our VPN services.',
                         ),
                         Bullet(
-                          title: 'To personalize your experience and improve our offerings.',
+                          title:
+                              'To personalize your experience and improve our offerings.',
                         ),
                         Bullet(
                           title: 'To monitor and analyze usage and trends.',
                         ),
                         Bullet(
-                          title: 'To communicate with you about updates, promotions, and support.',
+                          title:
+                              'To communicate with you about updates, promotions, and support.',
                         ),
                         const SizedBox(height: 24),
                         // Section 4
@@ -145,7 +147,7 @@ class Privacypolicy extends StatelessWidget {
                           '4. Data Security',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
                           ),
@@ -155,7 +157,7 @@ class Privacypolicy extends StatelessWidget {
                           'We implement industry-standard security measures to protect your data from unauthorized access, disclosure, or destruction.',
                           style: TextStyle(
                             color: Colors.grey.shade400,
-                            fontSize: 16,
+                            fontSize: 12,
                             fontFamily: 'Poppins',
                           ),
                         ),
@@ -165,7 +167,7 @@ class Privacypolicy extends StatelessWidget {
                           '5. Changes to This Policy',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Poppins',
                           ),
@@ -175,7 +177,7 @@ class Privacypolicy extends StatelessWidget {
                           'We may update this Privacy Policy from time to time. We encourage you to review this page periodically for any changes.',
                           style: TextStyle(
                             color: Colors.grey.shade400,
-                            fontSize: 16,
+                            fontSize: 12,
                             fontFamily: 'Poppins',
                           ),
                         ),
@@ -250,7 +252,7 @@ class Bullet extends StatelessWidget {
               title,
               style: const TextStyle(
                 color: Color(0xFFB0B0B0),
-                fontSize: 16,
+                fontSize: 12,
                 fontFamily: 'Poppins',
               ),
             ),

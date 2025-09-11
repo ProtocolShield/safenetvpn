@@ -1,28 +1,27 @@
 // ignore_for_file: file_names, use_build_context_synchronously
 import 'dart:convert';
+import 'package:get/get.dart';
 import 'dart:async' show Timer;
 import 'dart:developer' show log;
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter_vpn/state.dart';
 import 'package:http/http.dart' as http;
 import 'package:dart_ping/dart_ping.dart';
 import 'package:http/http.dart' show post;
 import 'dart:io' show Platform, InternetAddress;
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+import 'package:safenetvpn/Views/premium/premium.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vpn/flutter_vpn.dart' show FlutterVpn;
 import 'package:safenetvpn/Defaults/defaults.dart' show Defaults;
 import 'package:safenetvpn/Models/server.dart' show Server, ServerResponse;
 import 'package:safenetvpn/Engines/wireguardEngine.dart' show WireguardEngine;
-import 'package:safenetvpn/Models/plan.dart'
-    show ActivePlanResponse, UserPlan, PlanDetail;
 import 'package:safenetvpn/Engines/ikeav2Engine.dart' show Ikeav2EngineAndIpSec;
 import 'package:safenetvpn/Widgets/customSnackBar.dart' show showCustomSnackBar;
 import 'package:wireguard_flutter/wireguard_flutter.dart' show WireGuardFlutter;
-import 'package:wireguard_flutter/wireguard_flutter_platform_interface.dart'
-    show VpnStage, WireGuardFlutterInterface;
+import 'package:safenetvpn/Models/plan.dart' show ActivePlanResponse, PlanDetail, Subscription;
+import 'package:wireguard_flutter/wireguard_flutter_platform_interface.dart' show VpnStage, WireGuardFlutterInterface;
 
 enum Protocol { wireguard, ikeav2 }
 
@@ -31,10 +30,7 @@ enum VpnConnectedStates { connecting, connected, disconnected, disconnecting }
 class HomeRepo extends GetxController {
   var servers = <Server>[].obs;
   var filteredServers = <Server>[].obs;
-  Rx<ServerResponse> serverModel = ServerResponse(
-    servers: [],
-    status: true,
-  ).obs;
+  var serverModel = ServerResponse(servers: [], status: true).obs;
   var isGettingConfig = false.obs;
   var selectedServerIndex = 0.obs;
   var selectedSubServerIndex = 0.obs;
@@ -49,7 +45,7 @@ class HomeRepo extends GetxController {
   var isPremium = false.obs;
   var expiryDate = DateTime.now().obs;
   var plan = Rxn<PlanDetail>();
-  var purchase = Rxn<UserPlan>();
+  var subscription= Rxn<Subscription>();
   var isAdblock = false.obs;
   var subjectController = TextEditingController().obs;
   var messageController = TextEditingController().obs;
@@ -58,7 +54,7 @@ class HomeRepo extends GetxController {
 
   bool _autoSelectProtocol = false;
   bool get autoSelectProtocol => _autoSelectProtocol;
-  RxInt selectedBottomIndex = 0.obs;
+  var selectedBottomIndex = 0.obs;
 
   final WireGuardFlutterInterface _wireguard = WireGuardFlutter.instance;
   final WireguardEngine _wireguardEngine = WireguardEngine();
@@ -89,27 +85,40 @@ class HomeRepo extends GetxController {
     startGettingStages();
   }
 
-  setSearchText(String text) {
+  void setSearchText(String text, String selectedTab) {
     searchText.value = text;
-    filterServers();
+    filterServers(selectedTab);
   }
 
-  filterServers() {
-    if (searchText.value.trim().isEmpty) {
-      filteredServers.assignAll(servers); // restore full list
-      isSearching.value = false;
-    } else {
-      filteredServers.assignAll(
-        servers
-            .where(
-              (server) => server.name.toLowerCase().contains(
-                searchText.value.toLowerCase(),
-              ),
-            )
-            .toList(),
-      );
-      isSearching.value = true;
+  // Pass in the selected tab (like "All Servers", "Premium", "Free", "Favourites")
+  void filterServers(String selectedTab) {
+    // Start with all servers
+    var results = servers.toList();
+
+    // 1. Filter by tab
+    if (selectedTab == "Premium") {
+      results = results
+          .where((s) => s.type.toLowerCase() == "premium")
+          .toList();
+    } else if (selectedTab == "Free") {
+      results = results.where((s) => s.type.toLowerCase() == "free").toList();
     }
+
+    // 2. Filter by search text
+    if (searchText.value.trim().isNotEmpty) {
+      results = results
+          .where(
+            (s) =>
+                s.name.toLowerCase().contains(searchText.value.toLowerCase()),
+          )
+          .toList();
+      isSearching.value = true;
+    } else {
+      isSearching.value = false;
+    }
+
+    // Update filtered list
+    filteredServers.assignAll(results);
   }
 
   setAutoSelectProtocol(bool value) async {
@@ -119,7 +128,6 @@ class HomeRepo extends GetxController {
     if (value) {
       await setProtocol(Protocol.ikeav2);
     }
-
     update();
   }
 
@@ -226,8 +234,19 @@ class HomeRepo extends GetxController {
   }
 
   changeCountry(int value, int val, BuildContext context) async {
+    // Check if this server is premium
+    final server = servers[value]; // assuming servers list is available here
+    if (server.type.toLowerCase() == "premium" && !isPremium.value) {
+      //  Redirect to Premium screen
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (context) => Premium()));
+      return; // stop execution
+    }
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     log("Changing server to index: $value, sub-index: $val");
+
     selectedServerIndex.value = value;
     selectedSubServerIndex.value = val;
 
@@ -237,7 +256,7 @@ class HomeRepo extends GetxController {
     // Wait for values to properly reflect
     await Future.delayed(Duration(milliseconds: 700));
 
-    // If vpn is connected then first disconnect then do toggle vpn
+    // If vpn is connected then first disconnect then toggle vpn
     if (vpnConnectionState.value == VpnConnectedStates.connected ||
         vpnConnectionState.value == VpnConnectedStates.connecting) {
       toggleVpn(context);
@@ -251,70 +270,82 @@ class HomeRepo extends GetxController {
   }
 
   Future<void> getPremium() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('access_token');
+  SharedPreferences preferences = await SharedPreferences.getInstance();
+  String? token = preferences.getString('access_token');
 
-    log("=== PREMIUM CHECK START ===");
-    log("Token: $token");
+  log("=== PREMIUM CHECK START ===");
+  log("Token: $token");
 
-    if (token == null) {
-      log("Token is null. Redirecting to login.");
+  if (token == null) {
+    log("Token is null. Redirecting to login.");
+    isPremium.value = false;
+    subscription.value = null;
+    update();
+    return;
+  }
+
+  final headers = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
+
+  try {
+    final response = await http.get(
+      Uri.parse(Defaults.PURCHASE_URL),
+      headers: headers,
+    );
+    log("Response premium body: ${response.body}");
+
+    if (response.statusCode != 200) {
+      log("Error fetching premium data.");
       isPremium.value = false;
+      subscription.value = null;
       update();
-
       return;
     }
 
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    final data = jsonDecode(response.body);
+    final activePlanResponse = ActivePlanResponse.fromJson(data);
 
-    try {
-      final response = await http.get(
-        Uri.parse(Defaults.PURCHASE_URL),
-        headers: headers,
-      );
+    if (activePlanResponse.status && activePlanResponse.subscription != null) {
+      final sub = activePlanResponse.subscription!;
+      subscription.value = sub;
 
-      if (response.statusCode != 200) {
-        log("Error fetching premium data.");
-        isPremium.value = false;
-        update();
+      // Parse expiry date from ends_at
+      DateTime expiry = DateTime.tryParse(sub.endsAt) ?? DateTime.now();
+      DateTime graceExpiry =
+          DateTime.tryParse(sub.graceEndsAt) ?? expiry; // fallback
 
-        return;
-      }
+      expiryDate.value = expiry;
 
-      final data = jsonDecode(response.body);
-      final activePlanResponse = ActivePlanResponse.fromJson(data);
-
-      if (activePlanResponse.status) {
-        purchase.value = activePlanResponse.plan;
-        expiryDate.value = purchase.value!.endDate;
-
-        if (expiryDate.value.isAfter(DateTime.now())) {
-          isPremium.value = true;
-          log(
-            "Premium active. Days left: ${expiryDate.value.difference(DateTime.now()).inDays}",
-          );
-        } else {
-          isPremium.value = false;
-          log("Premium expired.");
-        }
+      if (graceExpiry.isAfter(DateTime.now())) {
+        isPremium.value = true;
+        log(
+          "Premium active. Ends at: ${expiry.toIso8601String()} | Grace until: ${graceExpiry.toIso8601String()}",
+        );
+        log(
+          "Days left (including grace): ${graceExpiry.difference(DateTime.now()).inDays}",
+        );
       } else {
         isPremium.value = false;
-        purchase.value = null;
-        log("No active plan found.");
+        log("Premium expired completely.");
       }
-
-      update();
-    } catch (e) {
-      log("Exception occurred while fetching premium data: $e");
+    } else {
       isPremium.value = false;
-      purchase.value = null;
-      update();
+      subscription.value = null;
+      log("No active plan found.");
     }
+
+    update();
+  } catch (e) {
+    log("Exception occurred while fetching premium data: $e");
+    isPremium.value = false;
+    subscription.value = null;
+    update();
   }
+}
+
 
   getServers(bool net) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -359,7 +390,7 @@ class HomeRepo extends GetxController {
         filteredServers.assignAll(servers);
 
         log(servers.length.toString());
-       await  pingAllServers();
+        await pingAllServers();
         if (vpnConnectionState.value == VpnConnectedStates.connected) {
           startSpeedMonitoring();
         }

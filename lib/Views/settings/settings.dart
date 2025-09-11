@@ -1,9 +1,12 @@
+import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:safenetvpn/Repository/authRepo.dart';
 import 'package:safenetvpn/Repository/homeRepo.dart';
 import 'package:safenetvpn/Views/account/account.dart';
+import 'package:safenetvpn/Views/assistant/assistant.dart';
 import 'package:safenetvpn/Views/feedback/feedback.dart';
-import 'package:get/get.dart';
+import 'package:safenetvpn/Views/community/community.dart';
 import 'package:safenetvpn/Views/privacypolicy/privacypolicy.dart';
 import 'package:safenetvpn/Views/protocolchange/protocolchange.dart';
 
@@ -12,20 +15,20 @@ class Settings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  var authProvider = Get.find<AuthRepo>();
+    var authProvider = Get.find<AuthRepo>();
     return Scaffold(
       body: Column(
         children: [
           SizedBox(height: 50),
           Text(
             "Settings",
-            style: TextStyle(
+            style: GoogleFonts.daysOne(
               fontWeight: FontWeight.bold,
               fontSize: 22,
               color: Colors.white,
             ),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 5),
           GestureDetector(
             onTap: () {
               Navigator.of(
@@ -46,7 +49,6 @@ class Settings extends StatelessWidget {
                   //   ),
                   // ),
                   SizedBox(width: 10),
-                 
                 ],
               ),
             ),
@@ -59,7 +61,7 @@ class Settings extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                 GestureDetector(
+                GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
@@ -67,7 +69,7 @@ class Settings extends StatelessWidget {
                     );
                   },
                   child: SettingsWidget(
-                    imageData: "assets/images/protocols.png",
+                    imageData: "assets/images/killswitch.png",
                     title: "Account",
                   ),
                 ),
@@ -83,23 +85,51 @@ class Settings extends StatelessWidget {
                     title: "Select Protocols",
                   ),
                 ),
-                GetBuilder<HomeRepo>(builder: (provider) {
-                  return SettingsWidgetWithToggle(
-                    title: "Auto Connect",
-                    value: provider.isAutoConnectEnabled.value,
-                    image: "assets/images/share.png",
-                    onToggle: (value) => provider.toggleAutoConnectState(),
-                  );
-                }),
+                GetBuilder<HomeRepo>(
+                  builder: (provider) {
+                    return SettingsWidgetWithToggle(
+                      title: "Auto Connect",
+                      value: provider.isAutoConnectEnabled.value,
+                      image: "assets/images/share.png",
+                      onToggle: (value) => provider.toggleAutoConnectState(),
+                    );
+                  },
+                ),
 
-                GetBuilder<HomeRepo>(builder: (provider) {
-                  return SettingsWidgetWithToggle(
-                    title: "Kill Switch",
-                    value: provider.killSwitchEnabled.value,
-                    image: "assets/images/connectionmode.png",
-                    onToggle: (value) => provider.toggleKillSwitchState(),
-                  );
-                }),
+                GetBuilder<HomeRepo>(
+                  builder: (provider) {
+                    return SettingsWidgetWithToggle(
+                      title: "Kill Switch",
+                      value: provider.killSwitchEnabled.value,
+                      image: "assets/images/wifi.png",
+                      onToggle: (value) => provider.toggleKillSwitchState(),
+                    );
+                  },
+                ),
+
+                GestureDetector(
+                  onTap: () {},
+                  child: SettingsWidget(
+                    imageData: "assets/images/connectionmode.png",
+                    title: "Connection Mode",
+                    isConnetionActive: true,
+                  ),
+                ),
+
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AiAssistantScreen(),
+                      ),
+                    );
+                  },
+                  child: SettingsWidget(
+                    imageData: 'assets/images/ai_assistant.png',
+                    title: "Ai Assistant",
+                  ),
+                ),
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
@@ -110,6 +140,19 @@ class Settings extends StatelessWidget {
                   child: SettingsWidget(
                     imageData: "assets/images/feedback.png",
                     title: "Feedback",
+                  ),
+                ),
+
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Community()),
+                    );
+                  },
+                  child: SettingsWidget(
+                    imageData: "assets/images/community.png",
+                    title: "Community",
                   ),
                 ),
                 GestureDetector(
@@ -131,6 +174,7 @@ class Settings extends StatelessWidget {
                   child: SettingsWidget(
                     imageData: "assets/images/logout.png",
                     title: "Logout",
+                    islogout: true,
                   ),
                 ),
               ],
@@ -145,10 +189,14 @@ class Settings extends StatelessWidget {
 class SettingsWidget extends StatefulWidget {
   final String title;
   final String imageData;
-  const SettingsWidget({
+  bool isConnetionActive = false;
+  bool islogout = false;
+  SettingsWidget({
     super.key,
     required this.title,
     required this.imageData,
+    this.isConnetionActive = false,
+    this.islogout = false,
   });
 
   @override
@@ -158,6 +206,7 @@ class SettingsWidget extends StatefulWidget {
 class _SettingsWidgetState extends State<SettingsWidget> {
   @override
   Widget build(BuildContext context) {
+    var cont = Get.put<HomeRepo>(HomeRepo());
     return Container(
       height: 60, // Slightly increased for better image fit
       decoration: const BoxDecoration(color: Colors.transparent),
@@ -185,7 +234,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 5),
                 Text(
                   widget.title,
                   style: const TextStyle(
@@ -195,7 +244,33 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 ),
               ],
             ),
-            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+            const SizedBox(width: 12),
+            Row(
+              children: [
+                if (widget.isConnetionActive)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      cont.selectedProtocol.name ?? "None",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                Image.asset(
+                  "assets/images/forward.png",
+                  width: 16,
+                  height: 16,
+                  color: widget.islogout ? Colors.red : Colors.white,
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -233,15 +308,23 @@ class _SettingsWidgetWithToggleState extends State<SettingsWidgetWithToggle> {
         children: [
           Row(
             children: [
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey.withValues(alpha: 0.2),
+             Container(
+                  width: 40, // Fixed width for icon circle
+                  height: 40, // Fixed height for icon circle
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey.withValues(alpha: 0.2),
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      widget.image,
+                      width: 22, // Fixed image width
+                      height: 22, // Fixed image height
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-                child: Image.asset(widget.image, scale: 4),
-              ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 5),
               Text(
                 widget.title,
                 style: const TextStyle(

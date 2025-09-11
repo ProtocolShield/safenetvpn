@@ -10,6 +10,13 @@
 				"$dart"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Flutter pub get + analyze",
+			"type": "shell",
+			"command": "flutter pub get ; flutter analyze",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

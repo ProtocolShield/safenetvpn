@@ -10,7 +10,7 @@ class Defaults {
   static const String SIGN_UP_URL = "${BASE_URL}signup";
   static const String GET_SERVERS = "${BASE_URL}servers";
   static const String PURCHASE_STATUS_URL = "${BASE_URL}purchase/status";
-  static const String PURCHASE_URL = "${BASE_URL}purchase/active";
+  static const String PURCHASE_URL = "${BASE_URL}subscription/active";
   static const String FORGOT_PASSWORD_URL = "${BASE_URL}forgot-password";
   static const String RESET_PASSWORD_URL = "${BASE_URL}reset-password";
   static const String VERIFY_CODE = "${BASE_URL}verify/code";

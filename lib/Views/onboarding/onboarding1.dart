@@ -11,19 +11,18 @@ class Onboarding1 extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
         child: Column(
           children: [
-            SizedBox(height: 50),
+            SizedBox(height: 40),
             Image.asset(
               'assets/images/onboarding1.png',
               fit: BoxFit.cover,
               scale: 3.5,
             ),
             SizedBox(height: 20),
-            Text(
-              "Keep your data private and secure \n every time you connect.",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 14,
+            Center(
+              child: Text(
+                "Keep your data private and secure every time you connect.",
+                style: TextStyle(color: Colors.white, fontSize: 14),
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 40),
@@ -57,9 +56,9 @@ class Onboarding1 extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   gradient: LinearGradient(
-                     colors: [Colors.purple, Colors.blue],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                    colors: [Colors.purple, Colors.blue],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
                 child: Row(
@@ -75,6 +74,8 @@ class Onboarding1 extends StatelessWidget {
                       ),
                     ),
                     Spacer(),
+                    Image.asset("assets/images/forward.png", scale: 3),
+                    SizedBox(width: 8),
                   ],
                 ),
               ),

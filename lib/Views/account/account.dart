@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:safenetvpn/Repository/authRepo.dart';
 import 'package:safenetvpn/Repository/homeRepo.dart';
 
@@ -8,8 +9,8 @@ class Account extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  var provider = Get.find<AuthRepo>();
-  var provider1 = Get.find<HomeRepo>();
+  var provider = Get.put<AuthRepo>(AuthRepo());
+  var provider1 = Get.put<HomeRepo>(HomeRepo());
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -44,12 +45,12 @@ class Account extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    const Expanded(
+                     Expanded(
                       child: Text(
                         'My Account',
-                        style: TextStyle(
+                        style: GoogleFonts.daysOne(
                           color: Colors.white,
-                          fontSize: 28,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
@@ -134,7 +135,7 @@ class Account extends StatelessWidget {
                 ),
               ),
 
-              provider1.isPremium == true
+              provider1.isPremium.value == true
                   ? // Subscription Details Card
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -195,7 +196,7 @@ class Account extends StatelessWidget {
                             DetailRow(
                               icon: Icons.check_circle,
                               iconColor: Colors.green,
-                              title: provider1.purchase.value!.status,
+                              title: provider1.subscription.value!.status,
                               subtitle: 'Subscription status',
                             ),
                             const Divider(
@@ -206,7 +207,7 @@ class Account extends StatelessWidget {
                             DetailRow(
                               icon: Icons.calendar_today,
                               title:
-                                  "${provider1.expiryDate.value.day} / ${provider1.expiryDate.value.month} / ${provider1.expiryDate?.value.year}",
+                                  "${provider1.expiryDate.value.day} / ${provider1.expiryDate.value.month} / ${provider1.expiryDate.value.year}",
                               subtitle: 'Expires on',
                             ),
                             const Divider(
@@ -272,7 +273,7 @@ class DetailRow extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
               ),
