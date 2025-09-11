@@ -244,7 +244,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                 ),
               ],
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Row(
               children: [
                 if (widget.isConnetionActive)
@@ -263,12 +263,13 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     ),
                   ),
                 const SizedBox(width: 8),
-                Image.asset(
-                  "assets/images/forward.png",
-                  width: 16,
-                  height: 16,
-                  color: widget.islogout ? Colors.red : Colors.white,
-                ),
+                if (!widget.isConnetionActive)
+                  Image.asset(
+                    "assets/images/forward.png",
+                    width: 16,
+                    height: 16,
+                    color: widget.islogout ? Colors.red : Colors.white,
+                  ),
               ],
             ),
           ],
@@ -308,22 +309,22 @@ class _SettingsWidgetWithToggleState extends State<SettingsWidgetWithToggle> {
         children: [
           Row(
             children: [
-             Container(
-                  width: 40, // Fixed width for icon circle
-                  height: 40, // Fixed height for icon circle
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey.withValues(alpha: 0.2),
-                  ),
-                  child: Center(
-                    child: Image.asset(
-                      widget.image,
-                      width: 22, // Fixed image width
-                      height: 22, // Fixed image height
-                      fit: BoxFit.contain,
-                    ),
+              Container(
+                width: 40, // Fixed width for icon circle
+                height: 40, // Fixed height for icon circle
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey.withValues(alpha: 0.2),
+                ),
+                child: Center(
+                  child: Image.asset(
+                    widget.image,
+                    width: 22, // Fixed image width
+                    height: 22, // Fixed image height
+                    fit: BoxFit.contain,
                   ),
                 ),
+              ),
               const SizedBox(width: 5),
               Text(
                 widget.title,
