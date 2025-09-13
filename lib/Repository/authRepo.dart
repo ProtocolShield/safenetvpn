@@ -1,9 +1,8 @@
-// ignore_for_file: file_names, use_build_context_synchronously
-
+// ignore_for_file:
 import 'dart:convert';
+import 'package:get/get.dart';
 import 'dart:developer' show log;
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:safenetvpn/Models/user.dart';
 import 'package:safenetvpn/Views/auth/auth.dart';
@@ -24,8 +23,8 @@ class AuthRepo extends GetxController {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
-  TextEditingController feedbackSubjectController = TextEditingController();
   TextEditingController feedbackEmailController = TextEditingController();
+  TextEditingController feedbackSubjectController = TextEditingController();
   TextEditingController feedbackMessageController = TextEditingController();
 
   void setAuthView(bool isSignUp) {

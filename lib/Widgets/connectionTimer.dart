@@ -26,7 +26,6 @@ class _ConnectionTimerState extends State<ConnectionTimer> {
   Future<void> loadStoredTime() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     log('Time loaded from storage: ${prefs.getString('connectTime')}');
-    // If no stored time, set to current time
     final storedTime = DateTime.parse(
       prefs.getString('connectTime') ?? DateTime.now().toString(),
     );

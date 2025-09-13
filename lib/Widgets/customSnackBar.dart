@@ -33,10 +33,7 @@ void showCustomSnackBar(
               ),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
               ),
             ],
           ),

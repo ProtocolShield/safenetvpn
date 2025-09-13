@@ -9,8 +9,8 @@ import 'package:http/http.dart' as http;
 import 'package:dart_ping/dart_ping.dart';
 import 'package:http/http.dart' show post;
 import 'dart:io' show Platform, InternetAddress;
-import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:safenetvpn/Views/premium/premium.dart';
+import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vpn/flutter_vpn.dart' show FlutterVpn;
@@ -95,7 +95,7 @@ class HomeRepo extends GetxController {
     // Start with all servers
     var results = servers.toList();
 
-    // 1. Filter by tab
+    //  Filter by tab
     if (selectedTab == "Premium") {
       results = results
           .where((s) => s.type.toLowerCase() == "premium")
@@ -104,7 +104,7 @@ class HomeRepo extends GetxController {
       results = results.where((s) => s.type.toLowerCase() == "free").toList();
     }
 
-    // 2. Filter by search text
+    //  Filter by search text
     if (searchText.value.trim().isNotEmpty) {
       results = results
           .where(
@@ -223,7 +223,6 @@ class HomeRepo extends GetxController {
           }
         }
       }
-
       // Optionally, sort servers by latency or update filteredServers
       // filteredServers = [...servers];
     } catch (e) {
@@ -237,11 +236,10 @@ class HomeRepo extends GetxController {
     // Check if this server is premium
     final server = servers[value]; // assuming servers list is available here
     if (server.type.toLowerCase() == "premium" && !isPremium.value) {
-      //  Redirect to Premium screen
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (context) => Premium()));
-      return; // stop execution
+      return; 
     }
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -314,19 +312,18 @@ class HomeRepo extends GetxController {
 
       // Parse expiry date from ends_at
       DateTime expiry = DateTime.tryParse(sub.endsAt) ?? DateTime.now();
-      DateTime graceExpiry =
-          DateTime.tryParse(sub.graceEndsAt) ?? expiry; // fallback
+      DateTime graceExpiry = DateTime.tryParse(sub.graceEndsAt) ?? expiry; // fallback
 
       expiryDate.value = expiry;
 
       if (graceExpiry.isAfter(DateTime.now())) {
         isPremium.value = true;
-        log(
-          "Premium active. Ends at: ${expiry.toIso8601String()} | Grace until: ${graceExpiry.toIso8601String()}",
-        );
-        log(
-          "Days left (including grace): ${graceExpiry.difference(DateTime.now()).inDays}",
-        );
+        // log(
+        //   "Premium active. Ends at: ${expiry.toIso8601String()} | Grace until: ${graceExpiry.toIso8601String()}",
+        // );
+        // log(
+        //   "Days left (including grace): ${graceExpiry.difference(DateTime.now()).inDays}",
+        // );
       } else {
         isPremium.value = false;
         log("Premium expired completely.");

@@ -42,8 +42,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     ),
   ];
 
-  // Typing indicator removed as requested
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

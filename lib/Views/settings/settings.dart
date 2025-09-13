@@ -254,7 +254,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                       vertical: 4,
                     ),
                     child: Text(
-                      cont.selectedProtocol.name ?? "None",
+                      cont.selectedProtocol.name,
                       style: TextStyle(
                         color: Colors.grey,
                         fontSize: 12,
@@ -269,12 +269,12 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     width: 16,
                     height: 16,
                     color: widget.islogout ? Colors.red : Colors.white,
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
+                  )
+              ]
+            )
+          ]
+        )
+      )
     );
   }
 }

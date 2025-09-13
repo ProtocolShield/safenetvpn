@@ -19,8 +19,8 @@ class ForgotPassword extends StatelessWidget {
             // Header
             Padding(
               padding: const EdgeInsets.only(
-                left: 16,
                 top: 16,
+                left: 16,
                 right: 16,
                 bottom: 8,
               ),
@@ -79,8 +79,8 @@ class ForgotPassword extends StatelessWidget {
                 GradientTextField(
                   hintText: "Enter your email",
                   controller: provider.emailController,
-                ),
-              ],
+                )
+              ]
             ),
             SizedBox(height: 15),
 
