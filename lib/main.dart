@@ -1,15 +1,14 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:safenetvpn/Views/splash/splash.dart';
+import 'package:safenetvpn/ui/core/ui/splash/splash.dart' show SplashView;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(const SafeNetApp());
 }
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SafeNetApp extends StatelessWidget {
+  const SafeNetApp({super.key});
   
   // This widget is the root of your application.
   @override
@@ -47,7 +46,7 @@ class MyApp extends StatelessWidget {
         ),
         dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF16181D)),
       ),
-      home: const Splash(),
+      home: const SplashView(),
     );
   }
 }
