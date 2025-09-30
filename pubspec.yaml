@@ -65,11 +65,11 @@ dev_dependencies:
 flutter_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/icon.png"
+  image_path: "assets/safenet.png"
   adaptive_icon_background: "#000000" # black background
   macos:
     generate: true
-    image_path: "assets/icon.png"
+    image_path: "assets/safenet.png"
 
 
 # The following section is specific to Flutter packages.

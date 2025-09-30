@@ -7,6 +7,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const SafeNetApp());
 }
+
 class SafeNetApp extends StatelessWidget {
   const SafeNetApp({super.key});
   

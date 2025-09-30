@@ -8,6 +8,7 @@ import 'package:flutter_vpn/state.dart';
 import 'package:http/http.dart' as http;
 import 'package:dart_ping/dart_ping.dart';
 import 'package:http/http.dart' show post;
+import 'package:safenetvpn/domain/models/plan.dart';
 import 'dart:io' show Platform, InternetAddress;
 
 import 'package:safenetvpn/utils/utils.dart' show Utils;
@@ -16,12 +17,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vpn/flutter_vpn.dart' show FlutterVpn;
 import 'package:safenetvpn/ui/core/ui/premium/premium.dart' show Premium;
 import 'package:wireguard_flutter/wireguard_flutter.dart' show WireGuardFlutter;
-import 'package:safenetvpn/domain/models/server.dart' show Server, ServerResponse;
-import 'package:safenetvpn/ui/widgets/customSnackBar.dart' show showCustomSnackBar;
-import 'package:safenetvpn/data/services/wireguardServices.dart' show Wireguardservices;
-import 'package:safenetvpn/data/services/ikeav2Services.dart' show Ikeav2EngineAndIpSecServices;
-import 'package:safenetvpn/domain/models/plan.dart' show ActivePlanResponse, PlanDetail, Subscription;
-import 'package:wireguard_flutter/wireguard_flutter_platform_interface.dart' show VpnStage, WireGuardFlutterInterface;
+import 'package:safenetvpn/domain/models/server.dart'
+    show Server, ServerResponse;
+import 'package:safenetvpn/ui/widgets/customSnackBar.dart'
+    show showCustomSnackBar;
+import 'package:safenetvpn/data/services/wireguardServices.dart'
+    show Wireguardservices;
+import 'package:safenetvpn/data/services/ikeav2Services.dart'
+    show Ikeav2EngineAndIpSecServices;
+import 'package:safenetvpn/domain/models/subscription.dart'
+    show ActivePlanResponse, Subscription;
+import 'package:wireguard_flutter/wireguard_flutter_platform_interface.dart'
+    show VpnStage, WireGuardFlutterInterface;
 
 enum Proto { wireguard, ikeav2 }
 
@@ -34,7 +41,7 @@ class HomeGateModel extends GetxController {
   var cfgLoading = false.obs;
   var srvIndex = 0.obs;
   var subSrvIndex = 0.obs;
-  var protocol = Proto.ikeav2.obs;
+  var protocol = Proto.wireguard.obs;
   var ikeav2Engine = Ikeav2EngineAndIpSecServices();
   var vpnConnectionState = MyVpnConnectState.disconnected.obs;
   var queryText = ''.obs;
@@ -44,8 +51,9 @@ class HomeGateModel extends GetxController {
   var busyFlag = false.obs;
   var proActive = false.obs;
   var expiryAt = DateTime.now().obs;
-  var plan = Rxn<PlanDetail>();
-  var subscription= Rxn<Subscription>();
+  var plans = <PlanModel>[].obs;
+
+  var subscription = Rxn<Subscription>();
   var isAdblock = false.obs;
   var fbSubjectCtrl = TextEditingController().obs;
   var fbMessageCtrl = TextEditingController().obs;
@@ -108,8 +116,7 @@ class HomeGateModel extends GetxController {
     if (queryText.value.trim().isNotEmpty) {
       results = results
           .where(
-            (s) =>
-                s.name.toLowerCase().contains(queryText.value.toLowerCase()),
+            (s) => s.name.toLowerCase().contains(queryText.value.toLowerCase()),
           )
           .toList();
       queryActive.value = true;
@@ -239,7 +246,7 @@ class HomeGateModel extends GetxController {
       Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (context) => Premium()));
-      return; 
+      return;
     }
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -268,81 +275,77 @@ class HomeGateModel extends GetxController {
   }
 
   Future<void> getPre() async {
-  SharedPreferences preferences = await SharedPreferences.getInstance();
-  String? token = preferences.getString('t');
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? token = preferences.getString('t');
 
-  log("=== PREMIUM CHECK START ===");
-  log("Token: $token");
+    log("=== PREMIUM CHECK START ===");
+    log("Token: $token");
 
-  if (token == null) {
-    log("Token is null. Redirecting to login.");
-    proActive.value = false;
-    subscription.value = null;
-    update();
-    return;
-  }
-
-  final headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Authorization': 'Bearer $token',
-  };
-
-  try {
-    final response = await http.get(
-      Uri.parse(Utils.PURCHASE_URL),
-      headers: headers,
-    );
-    log("Response premium body: ${response.body}");
-
-    if (response.statusCode != 200) {
-      log("Error fetching premium data.");
+    if (token == null) {
+      log("Token is null. Redirecting to login.");
       proActive.value = false;
       subscription.value = null;
       update();
       return;
     }
 
-    final data = jsonDecode(response.body);
-    final activePlanResponse = ActivePlanResponse.fromJson(data);
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
 
-    if (activePlanResponse.status && activePlanResponse.subscription != null) {
-      final sub = activePlanResponse.subscription!;
-      subscription.value = sub;
+    try {
+      final response = await http.get(
+        Uri.parse(Utils.PURCHASE_URL),
+        headers: headers,
+      );
 
-      // Parse expiry date from ends_at
-      DateTime expiry = DateTime.tryParse(sub.endsAt) ?? DateTime.now();
-      DateTime graceExpiry = DateTime.tryParse(sub.graceEndsAt) ?? expiry; // fallback
+      log("Response premium body: ${response.body}");
 
-      expiryAt.value = expiry;
+      if (response.statusCode != 200) {
+        log("Error fetching premium data. Status: ${response.statusCode}");
+        proActive.value = false;
+        subscription.value = null;
+        update();
+        return;
+      }
 
-      if (graceExpiry.isAfter(DateTime.now())) {
-        proActive.value = true;
-        // log(
-        //   "Premium active. Ends at: ${expiry.toIso8601String()} | Grace until: ${graceExpiry.toIso8601String()}",
-        // );
-        // log(
-        //   "Days left (including grace): ${graceExpiry.difference(DateTime.now()).inDays}",
-        // );
+      final data = jsonDecode(response.body);
+      final subscriptionResponse = ActivePlanResponse.fromJson(data);
+
+      if (subscriptionResponse.status &&
+          subscriptionResponse.subscription != null) {
+        final sub = subscriptionResponse.subscription!;
+        subscription.value = sub;
+
+        // Parse expiry dates
+        DateTime expiry = sub.endsAt ?? DateTime.now();
+        DateTime graceExpiry = sub.graceEndsAt ?? expiry;
+
+        expiryAt.value = expiry;
+
+        if (graceExpiry.isAfter(DateTime.now())) {
+          proActive.value = true;
+          log("Premium active. Ends at: $expiry | Grace until: $graceExpiry");
+        } else {
+          proActive.value = false;
+          log("Premium expired completely.");
+        }
       } else {
         proActive.value = false;
-        log("Premium expired completely.");
+        subscription.value = null;
+        log("No active plan found.");
       }
-    } else {
+
+      update();
+    } catch (e) {
+      log("Exception occurred while fetching premium data: $e");
       proActive.value = false;
       subscription.value = null;
-      log("No active plan found.");
+      update();
     }
-
-    update();
-  } catch (e) {
-    log("Exception occurred while fetching premium data: $e");
-    proActive.value = false;
-    subscription.value = null;
-    update();
   }
-}
-
 
   getsrvList(bool net) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -700,7 +703,7 @@ class HomeGateModel extends GetxController {
     }
   }
 
-  Future<bool> cWireguard(String domain,   BuildContext context) async {
+  Future<bool> cWireguard(String domain, BuildContext context) async {
     try {
       busyFlag.value = true;
 
@@ -730,10 +733,7 @@ class HomeGateModel extends GetxController {
         );
         return false;
       }
-      final config = await selectedWirVPNConfig(
-        'http://$domain:5000',
-        context,
-      );
+      final config = await selectedWirVPNConfig('http://$domain:5000', context);
 
       final success = await _wireguardEngine.startWireguard(
         server: domain,
@@ -828,6 +828,7 @@ class HomeGateModel extends GetxController {
       var password = prefs.getString('p') ?? '';
 
       var username = "${name}_$platform";
+      log("Ip is $ip");
       log("Username is $username");
       log("Password is $password");
 
@@ -982,7 +983,7 @@ class HomeGateModel extends GetxController {
     speedUpdateTimer = null;
   }
 
-  gPlans() async {
+  Future<void> gPlans() async {
     try {
       log("Fetching plans...");
       busyFlag.value = true;
@@ -990,33 +991,50 @@ class HomeGateModel extends GetxController {
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('t');
-      // Implement plan fetching logic here
+
       var headers = {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
+        if (token != null) 'Authorization': 'Bearer $token',
       };
+
       var response = await http.get(
         Uri.parse(Utils.ALL_PLANS),
         headers: headers,
       );
-      log(response.body);
-      var data = jsonDecode(response.body);
-      log("Plans response: $data");
-      if (data["status"] == true) {
-        // Handle successful response
-        log("Plans fetched successfully");
-        plan.value = PlanDetail.fromJson(data["plans"]);
-        update();
 
-        // Parse and store plans as needed
-      } else {
-        log("Failed to fetch plans");
+      log("Plans raw response: ${response.body}");
+
+      if (response.statusCode != 200) {
+        log("Failed with status: ${response.statusCode}");
+        busyFlag.value = false;
+        update();
+        return;
       }
+
+      var data = jsonDecode(response.body);
+      log("Plans response decoded: $data");
+
+      // Use model
+      final plansResponse = PlansModelResponse.fromJson(data);
+
+      if (plansResponse.status && plansResponse.plans.isNotEmpty) {
+        plans.assignAll(plansResponse.plans);
+
+        log("Plans fetched successfully: ${plans.length} plans");
+        for (var p in plans) {
+          log("Plan: ${p.name} | Price: ${p.discountPrice}");
+        }
+      } else {
+        log("No plans found or invalid response.");
+      }
+
       busyFlag.value = false;
       update();
     } catch (error) {
       log("Exception occurred while fetching plans: $error");
+      busyFlag.value = false;
+      update();
     }
   }
 }

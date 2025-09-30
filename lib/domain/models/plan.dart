@@ -1,121 +1,91 @@
-class ActivePlanResponse {
+
+class PlansModelResponse {
   final bool status;
-  final String message;
-  final Subscription? subscription;
-  final bool isOnTrial;
-  final String provider;
-  final bool hasFreeTrial;
-  final dynamic trialInfo;
+  final List<PlanModel> plans;
 
-  ActivePlanResponse({
+  PlansModelResponse({
     required this.status,
-    required this.message,
-    this.subscription,
-    required this.isOnTrial,
-    required this.provider,
-    required this.hasFreeTrial,
-    this.trialInfo,
+    required this.plans,
   });
 
-  factory ActivePlanResponse.fromJson(Map<String, dynamic> json) {
-    return ActivePlanResponse(
+  factory PlansModelResponse.fromJson(Map<String, dynamic> json) {
+    return PlansModelResponse(
       status: json['status'] ?? false,
-      message: json['message'] ?? '',
-      subscription: json['subscription'] != null
-          ? Subscription.fromJson(json['subscription'])
-          : null,
-      isOnTrial: json['is_on_trial'] ?? false,
-      provider: json['provider'] ?? '',
-      hasFreeTrial: json['has_free_trial'] ?? false,
-      trialInfo: json['trial_info'],
+      plans: (json['plans'] as List<dynamic>?)
+              ?.map((e) => PlanModel.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }
 
-class Subscription {
-  final int id;
-  final PlanDetail plan;
-  final String startsAt;
-  final String endsAt;
-  final String trialEndsAt;
-  final String graceEndsAt;
-  final String amountPaid;
-  final String currency;
-  final String status;
-  final bool isRecurring;
-  final String provider;
-
-  Subscription({
-    required this.id,
-    required this.plan,
-    required this.startsAt,
-    required this.endsAt,
-    required this.trialEndsAt,
-    required this.graceEndsAt,
-    required this.amountPaid,
-    required this.currency,
-    required this.status,
-    required this.isRecurring,
-    required this.provider,
-  });
-
-  factory Subscription.fromJson(Map<String, dynamic> json) {
-    return Subscription(
-      id: json['id'],
-      plan: PlanDetail.fromJson(json['plan']),
-      startsAt: json['starts_at'],
-      endsAt: json['ends_at'],
-      trialEndsAt: json['trial_ends_at'],
-      graceEndsAt: json['grace_ends_at'],
-      amountPaid: json['amount_paid'],
-      currency: json['currency'],
-      status: json['status'],
-      isRecurring: json['is_recurring'],
-      provider: json['provider'],
-    );
-  }
-}
-
-class PlanDetail {
+class PlanModel {
   final int id;
   final String name;
   final String slug;
   final String description;
-  final String? price;
-  final int? duration;
-  final String? durationUnit;
+  final String originalPrice;
+  final String discountPrice;
+  final String currency;
   final String? stripePriceId;
-  final int trialPeriodDays;
+  final String? appstoreProductId;
+  final bool isActive;
   final bool isBestDeal;
+  final int trialPeriod;
+  final String trialInterval;
+  final int invoicePeriod;
+  final String invoiceInterval;
+  final int gracePeriod;
+  final String graceInterval;
   final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? deletedAt;
 
-  PlanDetail({
+  PlanModel({
     required this.id,
     required this.name,
     required this.slug,
     required this.description,
-    this.price,
-    this.duration,
-    this.durationUnit,
+    required this.originalPrice,
+    required this.discountPrice,
+    required this.currency,
     this.stripePriceId,
-    required this.trialPeriodDays,
+    this.appstoreProductId,
+    required this.isActive,
     required this.isBestDeal,
+    required this.trialPeriod,
+    required this.trialInterval,
+    required this.invoicePeriod,
+    required this.invoiceInterval,
+    required this.gracePeriod,
+    required this.graceInterval,
     required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
   });
 
-  factory PlanDetail.fromJson(Map<String, dynamic> json) {
-    return PlanDetail(
+  factory PlanModel.fromJson(Map<String, dynamic> json) {
+    return PlanModel(
       id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
-      description: json['description'],
-      price: json['price'],
-      duration: json['duration'],
-      durationUnit: json['duration_unit'],
+      name: json['name'] ?? '',
+      slug: json['slug'] ?? '',
+      description: json['description'] ?? '',
+      originalPrice: json['original_price'] ?? '',
+      discountPrice: json['discount_price'] ?? '',
+      currency: json['currency'] ?? '',
       stripePriceId: json['stripe_price_id'],
-      trialPeriodDays: json['trial_period_days'],
-      isBestDeal: json['is_best_deal'],
+      appstoreProductId: json['appstore_product_id'],
+      isActive: json['is_active'] ?? false,
+      isBestDeal: json['is_best_deal'] ?? false,
+      trialPeriod: json['trial_period'] ?? 0,
+      trialInterval: json['trial_interval'] ?? '',
+      invoicePeriod: json['invoice_period'] ?? 0,
+      invoiceInterval: json['invoice_interval'] ?? '',
+      gracePeriod: json['grace_period'] ?? 0,
+      graceInterval: json['grace_interval'] ?? '',
       createdAt: DateTime.parse(json['created_at']),
+      updatedAt: DateTime.parse(json['updated_at']),
+      deletedAt: json['deleted_at'],
     );
   }
 }

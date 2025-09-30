@@ -50,7 +50,7 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                           Row(
                             children: [
                               Center(
-                                child: Image.asset('assets/icon/icon.png', scale: 5),
+                                child: Image.asset('assets/safenet.png', scale: 10),
                               ),
                               const SizedBox(width: 12),
                               Column(

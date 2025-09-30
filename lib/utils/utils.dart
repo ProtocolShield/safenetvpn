@@ -1,6 +1,6 @@
 // ignore_for_file: constant_identifier_names
 class Utils {
-  static const String BASE_URL = "https://gotovpn.tecclubb.com/api/";
+  static const String BASE_URL = "https://admin.gotovpn.world/api/";
   static const String USER_URL = "${BASE_URL}user";
   static const String UPDATE_USER_URL = "${BASE_URL}user/update";
   static const String LOGIN_URL = "${BASE_URL}login";

@@ -90,7 +90,7 @@ class _SplashViewState extends State<SplashView> {
           children: [
             const SizedBox(height: 100),
             Image.asset(
-              'assets/images/safenetlogo.png',
+              'assets/safenet.png',
               fit: BoxFit.cover,
               scale: 3.0,
             ),
