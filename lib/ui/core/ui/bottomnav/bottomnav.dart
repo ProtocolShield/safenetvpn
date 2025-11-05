@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:safenetvpn/view_model/cipherGateModel.dart';
 import 'package:eva_icons_flutter/eva_icons_flutter.dart' show EvaIcons;
 import 'package:safenetvpn/ui/core/ui/settings/settings.dart' show Settings;
-import 'package:safenetvpn/view_model/homeGateModel.dart' show  HomeGateModel;
+import 'package:safenetvpn/view_model/homeGateModel.dart' show HomeGateModel;
 import 'package:safenetvpn/ui/core/ui/server/serverview.dart' show Serverview;
 import 'package:safenetvpn/ui/core/ui/vpnScreen/vpnscreen.dart' show VpnScreen;
 

@@ -1,10 +1,13 @@
 import 'package:get/get.dart';
+import 'package:safenetvpn/view_model/cipherGateModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:safenetvpn/ui/core/ui/splash/splash.dart' show SplashView;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Ensure CipherGateModel is available globally
+  Get.put(CipherGateModel());
   runApp(const SafeNetApp());
 }
 

@@ -9,10 +9,12 @@ import 'package:http/http.dart' as http;
 import 'package:dart_ping/dart_ping.dart';
 import 'package:http/http.dart' show post;
 import 'package:safenetvpn/domain/models/plan.dart';
+import 'package:safenetvpn/ui/core/ui/auth/auth.dart';
 import 'dart:io' show Platform, InternetAddress;
 
 import 'package:safenetvpn/utils/utils.dart' show Utils;
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+import 'package:safenetvpn/view_model/cipherGateModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vpn/flutter_vpn.dart' show FlutterVpn;
 import 'package:safenetvpn/ui/core/ui/premium/premium.dart' show Premium;
@@ -66,7 +68,7 @@ class HomeGateModel extends GetxController {
 
   final WireGuardFlutterInterface _wireguard = WireGuardFlutter.instance;
   final Wireguardservices _wireguardEngine = Wireguardservices();
-
+  var authProvider = Get.find<CipherGateModel>();
   // Reactive speeds for fine-grained rebuilds
   final RxString dS = "0.0".obs;
   final RxString uS = "0.0".obs;
@@ -274,6 +276,8 @@ class HomeGateModel extends GetxController {
     await tVpn(context);
   }
 
+  // i want to call a funntion every 3 seconds latter
+
   Future<void> getPre() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? token = preferences.getString('t');
@@ -311,7 +315,21 @@ class HomeGateModel extends GetxController {
         return;
       }
 
+      // if message is unthenticated then logout user
+
       final data = jsonDecode(response.body);
+
+      // if (data["message"] == "unauthenticated") {
+      //   log("Unauthenticated. Logging out user.");
+      //   // ERASE  the storage
+      //   SharedPreferences prefs = await SharedPreferences.getInstance();
+      //   await prefs.clear();
+      //   // navigate the user to login screen
+      //   Get.to(Auth());
+
+      //   // authProvider.shatter();
+      //   // call the logout function from CipherGateModel
+      // }
       final subscriptionResponse = ActivePlanResponse.fromJson(data);
 
       if (subscriptionResponse.status &&

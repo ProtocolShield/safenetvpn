@@ -2,7 +2,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:safenetvpn/view_model/homeGateModel.dart' show HomeGateModel, MyVpnConnectState, Proto;
+import 'package:safenetvpn/view_model/homeGateModel.dart'
+    show HomeGateModel, MyVpnConnectState, Proto;
 
 class ProtocolChange extends StatelessWidget {
   const ProtocolChange({super.key});
@@ -18,7 +19,12 @@ class ProtocolChange extends StatelessWidget {
               children: [
                 // Header
                 Padding(
-                  padding: const EdgeInsets.only(left: 16, top: 16, right: 16, bottom: 8),
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    top: 16,
+                    right: 16,
+                    bottom: 8,
+                  ),
                   child: Row(
                     children: [
                       InkWell(
@@ -31,7 +37,11 @@ class ProtocolChange extends StatelessWidget {
                             color: const Color(0xFF232326),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.arrow_back_ios_new,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -53,10 +63,16 @@ class ProtocolChange extends StatelessWidget {
 
                 // Auto Select Protocol
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
-                      Image.asset("assets/images/autoselectprotocol.png", scale: 4),
+                      Image.asset(
+                        "assets/images/autoselectprotocol.png",
+                        scale: 4,
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
@@ -84,11 +100,16 @@ class ProtocolChange extends StatelessWidget {
                       Switch(
                         value: homeRepo.autoSelectProtocol,
                         onChanged: (val) async {
-                          if (homeRepo.vpnConnectionState.value == MyVpnConnectState.connected ||
-                              homeRepo.vpnConnectionState.value == MyVpnConnectState.connecting) {
-                            final shouldDisconnect = await showDisconnectDialog(context);
+                          if (homeRepo.vpnConnectionState.value ==
+                                  MyVpnConnectState.connected ||
+                              homeRepo.vpnConnectionState.value ==
+                                  MyVpnConnectState.connecting) {
+                            final shouldDisconnect = await showDisconnectDialog(
+                              context,
+                            );
                             if (shouldDisconnect) {
-                              if (homeRepo.selectedProtocol == Proto.wireguard) {
+                              if (homeRepo.selectedProtocol ==
+                                  Proto.wireguard) {
                                 await homeRepo.dWireguard();
                               } else {
                                 await homeRepo.dIkeav2(context);
@@ -99,15 +120,19 @@ class ProtocolChange extends StatelessWidget {
                           }
                           await homeRepo.setAutoSelectProtocol(val);
                         },
-                        activeThumbColor: Colors.white,
+                        // activeThumbColor: Colors.white,
                         activeTrackColor: const Color(0xFF7F5AF0),
                         inactiveThumbColor: Colors.grey.shade400,
                         inactiveTrackColor: Colors.grey.shade700,
-                      )
-                    ]
-                  )
+                      ),
+                    ],
+                  ),
                 ),
-                const Divider(color: Color(0xFF232326), thickness: 1, height: 32),
+                const Divider(
+                  color: Color(0xFF232326),
+                  thickness: 1,
+                  height: 32,
+                ),
 
                 // Protocol Options
                 Expanded(
@@ -116,17 +141,26 @@ class ProtocolChange extends StatelessWidget {
                     children: [
                       _buildProtocolOption(
                         icon: Icons.lock,
-                        iconBg: const LinearGradient(colors: [Color(0xFF232326), Color(0xFF232326)]),
+                        iconBg: const LinearGradient(
+                          colors: [Color(0xFF232326), Color(0xFF232326)],
+                        ),
                         title: 'Ikeav2',
-                        description: 'Disbale intenet access if VPN conection suddenly drops. You should active alwasy-on VPN firstly',
-                        selected: homeRepo.selectedProtocol == Proto.ikeav2 && !homeRepo.autoSelectProtocol,
+                        description:
+                            'Disbale intenet access if VPN conection suddenly drops. You should active alwasy-on VPN firstly',
+                        selected:
+                            homeRepo.selectedProtocol == Proto.ikeav2 &&
+                            !homeRepo.autoSelectProtocol,
                         onTap: () async {
                           if (!homeRepo.autoSelectProtocol) {
-                            if (homeRepo.vpnConnectionState.value == MyVpnConnectState.connected ||
-                                homeRepo.vpnConnectionState.value == MyVpnConnectState.connecting) {
-                              final shouldDisconnect = await showDisconnectDialog(context);
+                            if (homeRepo.vpnConnectionState.value ==
+                                    MyVpnConnectState.connected ||
+                                homeRepo.vpnConnectionState.value ==
+                                    MyVpnConnectState.connecting) {
+                              final shouldDisconnect =
+                                  await showDisconnectDialog(context);
                               if (shouldDisconnect) {
-                                if (homeRepo.selectedProtocol == Proto.wireguard) {
+                                if (homeRepo.selectedProtocol ==
+                                    Proto.wireguard) {
                                   await homeRepo.dWireguard();
                                 } else {
                                   await homeRepo.dIkeav2(context);
@@ -139,20 +173,33 @@ class ProtocolChange extends StatelessWidget {
                           }
                         },
                       ),
-                      const Divider(color: Color(0xFF232326), thickness: 1, height: 32),
+                      const Divider(
+                        color: Color(0xFF232326),
+                        thickness: 1,
+                        height: 32,
+                      ),
                       _buildProtocolOption(
                         icon: Icons.flash_on,
-                        iconBg: const LinearGradient(colors: [Color(0xFF232326), Color(0xFF232326)]),
+                        iconBg: const LinearGradient(
+                          colors: [Color(0xFF232326), Color(0xFF232326)],
+                        ),
                         title: 'Wireguard',
-                        description: 'Disbale intenet access if VPN conection suddenly drops. You should active alwasy-on VPN firstly',
-                        selected: homeRepo.selectedProtocol == Proto.wireguard && !homeRepo.autoSelectProtocol,
+                        description:
+                            'Disbale intenet access if VPN conection suddenly drops. You should active alwasy-on VPN firstly',
+                        selected:
+                            homeRepo.selectedProtocol == Proto.wireguard &&
+                            !homeRepo.autoSelectProtocol,
                         onTap: () async {
                           if (!homeRepo.autoSelectProtocol) {
-                            if (homeRepo.vpnConnectionState.value == MyVpnConnectState.connected ||
-                                homeRepo.vpnConnectionState.value == MyVpnConnectState.connecting) {
-                              final shouldDisconnect = await showDisconnectDialog(context);
+                            if (homeRepo.vpnConnectionState.value ==
+                                    MyVpnConnectState.connected ||
+                                homeRepo.vpnConnectionState.value ==
+                                    MyVpnConnectState.connecting) {
+                              final shouldDisconnect =
+                                  await showDisconnectDialog(context);
                               if (shouldDisconnect) {
-                                if (homeRepo.selectedProtocol == Proto.wireguard) {
+                                if (homeRepo.selectedProtocol ==
+                                    Proto.wireguard) {
                                   await homeRepo.dWireguard();
                                 } else {
                                   await homeRepo.dIkeav2(context);
@@ -199,18 +246,19 @@ class ProtocolChange extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return GestureDetector(
-    onTap: onTap,
+      onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 48,
             height: 48,
-            decoration: BoxDecoration(
-              gradient: iconBg,
-              shape: BoxShape.circle,
+            decoration: BoxDecoration(gradient: iconBg, shape: BoxShape.circle),
+            child: Icon(
+              icon,
+              color: selected ? Color(0xFF7F5AF0) : Colors.white,
+              size: 26,
             ),
-            child: Icon(icon, color: selected ? Color(0xFF7F5AF0) : Colors.white, size: 26),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -249,7 +297,7 @@ class ProtocolChange extends StatelessWidget {
                         color: const Color(0xFF7F5AF0),
                         width: 3,
                       ),
-                      color: Colors.grey.shade600
+                      color: Colors.grey.shade600,
                     ),
                     child: const Center(
                       child: Icon(Icons.circle, color: Colors.white, size: 12),
@@ -260,10 +308,7 @@ class ProtocolChange extends StatelessWidget {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.grey.shade600,
-                        width: 2,
-                      ),
+                      border: Border.all(color: Colors.grey.shade600, width: 2),
                     ),
                   ),
           ),
@@ -275,88 +320,91 @@ class ProtocolChange extends StatelessWidget {
 
 Future<bool> showDisconnectDialog(BuildContext context) async {
   return await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return Dialog(
-        backgroundColor: const Color(0xFF232326),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.power_settings_new, color: Color(0xFF7F5AF0), size: 40),
-              const SizedBox(height: 16),
-              const Text(
-                'Disconnect VPN?',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Poppins',
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'You need to disconnect the VPN before changing protocol.',
-                style: TextStyle(
-                  color: Color(0xFFB0B0B0),
-                  fontSize: 14,
-                  fontFamily: 'Poppins',
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return Dialog(
+            backgroundColor: const Color(0xFF232326),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
+                  const Icon(
+                    Icons.power_settings_new,
+                    color: Color(0xFF7F5AF0),
+                    size: 40,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: const Color(0xFF7F5AF0),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text(
-                        'Disconnect',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        
-                        ),
-                      ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Disconnect VPN?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
                     ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'You need to disconnect the VPN before changing protocol.',
+                    style: TextStyle(
+                      color: Color(0xFFB0B0B0),
+                      fontSize: 14,
+                      fontFamily: 'Poppins',
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFF7F5AF0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            'Disconnect',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ),
-      );
-    },
-  ) ?? false;
+            ),
+          );
+        },
+      ) ??
+      false;
 }

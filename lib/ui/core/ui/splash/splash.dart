@@ -6,7 +6,8 @@ import 'package:safenetvpn/view_model/homeGateModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:safenetvpn/ui/core/ui/bottomnav/bottomnav.dart' show Bottomnav;
-import 'package:safenetvpn/ui/core/ui/onboarding/onboarding1.dart' show Onboarding1;
+import 'package:safenetvpn/ui/core/ui/onboarding/onboarding1.dart'
+    show Onboarding1;
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -50,11 +51,18 @@ class _SplashViewState extends State<SplashView> {
     repo1.probe(context);
     repo.lServerFromLocal();
     repo.gPlans();
-    repo.getPre();
+    periodicFunction();
 
     Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return; // check before navigation
       checkLoginStatus();
+    });
+  }
+
+  Future<void> periodicFunction() async {
+    final repo = Get.put<HomeGateModel>(HomeGateModel());
+    Timer.periodic(Duration(seconds: 3), (Timer timer) async {
+      await repo.getPre();
     });
   }
 
@@ -65,13 +73,13 @@ class _SplashViewState extends State<SplashView> {
     if (!mounted) return;
 
     if (token != null) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const Bottomnav()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const Bottomnav()));
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const Onboarding1()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const Onboarding1()));
     }
   }
 
@@ -89,11 +97,7 @@ class _SplashViewState extends State<SplashView> {
         child: Column(
           children: [
             const SizedBox(height: 100),
-            Image.asset(
-              'assets/safenet.png',
-              fit: BoxFit.cover,
-              scale: 3.0,
-            ),
+            Image.asset('assets/safenet.png', fit: BoxFit.cover, scale: 3.0),
             const SizedBox(height: 20),
             Image.asset(
               'assets/images/safenettext.png',
