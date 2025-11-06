@@ -1,91 +1,101 @@
+import 'dart:convert';
 
 class PlansModelResponse {
-  final bool status;
-  final List<PlanModel> plans;
+    bool status;
+    List<PlanModel> plans;
 
-  PlansModelResponse({
-    required this.status,
-    required this.plans,
-  });
+    PlansModelResponse({
+        required this.status,
+        required this.plans,
+    });
 
-  factory PlansModelResponse.fromJson(Map<String, dynamic> json) {
-    return PlansModelResponse(
-      status: json['status'] ?? false,
-      plans: (json['plans'] as List<dynamic>?)
-              ?.map((e) => PlanModel.fromJson(e))
-              .toList() ??
-          [],
+    factory PlansModelResponse.fromRawJson(String str) => PlansModelResponse.fromJson(json.decode(str));
+
+    String toRawJson() => json.encode(toJson());
+
+    factory PlansModelResponse.fromJson(Map<String, dynamic> json) => PlansModelResponse(
+        status: json["status"],
+        plans: List<PlanModel>.from(json["plans"].map((x) => PlanModel.fromJson(x))),
     );
-  }
+
+    Map<String, dynamic> toJson() => {
+        "status": status,
+        "plans": List<dynamic>.from(plans.map((x) => x.toJson())),
+    };
 }
 
 class PlanModel {
-  final int id;
-  final String name;
-  final String slug;
-  final String description;
-  final String originalPrice;
-  final String discountPrice;
-  final String currency;
-  final String? stripePriceId;
-  final String? appstoreProductId;
-  final bool isActive;
-  final bool isBestDeal;
-  final int trialPeriod;
-  final String trialInterval;
-  final int invoicePeriod;
-  final String invoiceInterval;
-  final int gracePeriod;
-  final String graceInterval;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final String? deletedAt;
+    int id;
+    String name;
+    String slug;
+    String description;
+    String originalPrice;
+    String discountPrice;
+    int invoicePeriod;
+    String invoiceInterval;
+    int trialPeriod;
+    String trialInterval;
+    dynamic paddlePriceId;
+    dynamic appstoreProductId;
+    bool isActive;
+    bool isBestDeal;
+    DateTime createdAt;
 
-  PlanModel({
-    required this.id,
-    required this.name,
-    required this.slug,
-    required this.description,
-    required this.originalPrice,
-    required this.discountPrice,
-    required this.currency,
-    this.stripePriceId,
-    this.appstoreProductId,
-    required this.isActive,
-    required this.isBestDeal,
-    required this.trialPeriod,
-    required this.trialInterval,
-    required this.invoicePeriod,
-    required this.invoiceInterval,
-    required this.gracePeriod,
-    required this.graceInterval,
-    required this.createdAt,
-    required this.updatedAt,
-    this.deletedAt,
-  });
+    PlanModel({
+        required this.id,
+        required this.name,
+        required this.slug,
+        required this.description,
+        required this.originalPrice,
+        required this.discountPrice,
+        required this.invoicePeriod,
+        required this.invoiceInterval,
+        required this.trialPeriod,
+        required this.trialInterval,
+        required this.paddlePriceId,
+        required this.appstoreProductId,
+        required this.isActive,
+        required this.isBestDeal,
+        required this.createdAt,
+    });
 
-  factory PlanModel.fromJson(Map<String, dynamic> json) {
-    return PlanModel(
-      id: json['id'],
-      name: json['name'] ?? '',
-      slug: json['slug'] ?? '',
-      description: json['description'] ?? '',
-      originalPrice: json['original_price'] ?? '',
-      discountPrice: json['discount_price'] ?? '',
-      currency: json['currency'] ?? '',
-      stripePriceId: json['stripe_price_id'],
-      appstoreProductId: json['appstore_product_id'],
-      isActive: json['is_active'] ?? false,
-      isBestDeal: json['is_best_deal'] ?? false,
-      trialPeriod: json['trial_period'] ?? 0,
-      trialInterval: json['trial_interval'] ?? '',
-      invoicePeriod: json['invoice_period'] ?? 0,
-      invoiceInterval: json['invoice_interval'] ?? '',
-      gracePeriod: json['grace_period'] ?? 0,
-      graceInterval: json['grace_interval'] ?? '',
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: DateTime.parse(json['updated_at']),
-      deletedAt: json['deleted_at'],
+    factory PlanModel.fromRawJson(String str) => PlanModel.fromJson(json.decode(str));
+
+    String toRawJson() => json.encode(toJson());
+
+    factory PlanModel.fromJson(Map<String, dynamic> json) => PlanModel(
+        id: json["id"],
+        name: json["name"],
+        slug: json["slug"],
+        description: json["description"],
+        originalPrice: json["original_price"],
+        discountPrice: json["discount_price"],
+        invoicePeriod: json["invoice_period"],
+        invoiceInterval: json["invoice_interval"],
+        trialPeriod: json["trial_period"],
+        trialInterval: json["trial_interval"],
+        paddlePriceId: json["paddle_price_id"],
+        appstoreProductId: json["appstore_product_id"],
+        isActive: json["is_active"],
+        isBestDeal: json["is_best_deal"],
+        createdAt: DateTime.parse(json["created_at"]),
     );
-  }
+
+    Map<String, dynamic> toJson() => {
+        "id": id,
+        "name": name,
+        "slug": slug,
+        "description": description,
+        "original_price": originalPrice,
+        "discount_price": discountPrice,
+        "invoice_period": invoicePeriod,
+        "invoice_interval": invoiceInterval,
+        "trial_period": trialPeriod,
+        "trial_interval": trialInterval,
+        "paddle_price_id": paddlePriceId,
+        "appstore_product_id": appstoreProductId,
+        "is_active": isActive,
+        "is_best_deal": isBestDeal,
+        "created_at": createdAt.toIso8601String(),
+    };
 }

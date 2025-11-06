@@ -12,6 +12,7 @@ void main() async {
 }
 
 class SafeNetApp extends StatelessWidget {
+  
   const SafeNetApp({super.key});
   
   // This widget is the root of your application.

@@ -12,11 +12,34 @@ class Premium extends StatefulWidget {
 }
 
 class _PremiumState extends State<Premium> {
-  int selectedPlan = 1; 
+  int selectedPlan = 0; 
+  final controller = Get.put(HomeGateModel());
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlans();
+  }
+
+  Future<void> _loadPlans() async {
+    setState(() => isLoading = true);
+    await controller.gPlans();
+    setState(() => isLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    var controller = Get.put(HomeGateModel());
+    if (isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -74,67 +97,90 @@ class _PremiumState extends State<Premium> {
                 ),
                 const SizedBox(height: 28),
                 // Gradient Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF4A90E2),
-                        Color(0xFF7F5AF0),
-                        Color(0xFFE94057),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children:  [
-                          Row(
-                            children: [
-                               Text(
-                               "${controller.plans[0].name}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                              SizedBox(width: 5,),
-                              Text(
-                               "${controller.plans[0].discountPrice}",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Poppins',
-                                ),
-                              ),
-                            ],
-                          ),
-                          Text(
-                            '${controller.plans[2].discountPrice} / ${controller.plans[2].name}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
-                            ),
-                          ),
-                        ],
+                Obx(() {
+                  if (controller.plans.isEmpty) {
+                    return Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(40),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF232326),
+                        borderRadius: BorderRadius.circular(24),
                       ),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
+                  }
+
+                  // Use the selected plan instead of first/last
+                  final currentPlan = selectedPlan < controller.plans.length 
+                      ? controller.plans[selectedPlan] 
+                      : controller.plans.first;
+
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 20,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF4A90E2),
+                          Color(0xFF7F5AF0),
+                          Color(0xFFE94057),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  "${currentPlan.name}",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                                SizedBox(width: 5),
+                                Text(
+                                  "\$${currentPlan.discountPrice}",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '\$${currentPlan.originalPrice}',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Poppins',
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                          ],
+                        ),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Shield Annual Plan',
+                      Text(
+                        '${currentPlan.name}',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -143,8 +189,8 @@ class _PremiumState extends State<Premium> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Enjoy complete access to Super VPN premium features for a full year',
+                      Text(
+                        '${currentPlan.description}',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -188,37 +234,66 @@ class _PremiumState extends State<Premium> {
                       ),
                     ],
                   ),
-                ),
+                );
+                }),
                 const SizedBox(height: 28),
-                // Plan Options
-                PlanOption(
-                  index: 0,
-                  title: 'Monthly \$${controller.plans[0].discountPrice}',
-                  trailing: 'Monthly Billed',
-                  titleSize: 14,
-                  trailingSize: 11,
-                  selectedPlan: selectedPlan,
-                  onSelected: (index) {
-                    setState(() {
-                      selectedPlan = index;
-                    });
-                  },
-                ),
+                // Plan Options - Dynamic List
+                Obx(() {
+                  if (controller.plans.isEmpty) {
+                    return Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.cloud_off,
+                            color: Colors.white54,
+                            size: 48,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Plans not available',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Unable to load subscription plans',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-                const SizedBox(height: 12),
-                PlanOption(
-                  index: 1,
-                  title: 'Annual \$${controller.plans[2].discountPrice}',
-                  trailing: 'Popular',
-                  titleSize: 14,
-                  trailingSize: 11,
-                  selectedPlan: selectedPlan,
-                  onSelected: (index) {
-                    setState(() {
-                      selectedPlan = index;
-                    });
-                  },
-                ),
+                  return Column(
+                    children: List.generate(
+                      controller.plans.length,
+                      (index) => Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index < controller.plans.length - 1 ? 12 : 0,
+                        ),
+                        child: PlanOption(
+                          index: index,
+                          title: '${controller.plans[index].name} \$${controller.plans[index].discountPrice}',
+                          trailing: controller.plans[index].isBestDeal ? 'Popular' : '${controller.plans[index].invoiceInterval} Billed',
+                          titleSize: 14,
+                          trailingSize: 11,
+                          selectedPlan: selectedPlan,
+                          onSelected: (idx) {
+                            setState(() {
+                              selectedPlan = idx;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 28),
                 // Continue Button
                 SizedBox(

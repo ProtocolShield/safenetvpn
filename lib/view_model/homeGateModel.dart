@@ -53,7 +53,7 @@ class HomeGateModel extends GetxController {
   var busyFlag = false.obs;
   var proActive = false.obs;
   var expiryAt = DateTime.now().obs;
-  var plans = <PlanModel>[].obs;
+ var plans = <PlanModel>[].obs;
 
   var subscription = Rxn<Subscription>();
   var isAdblock = false.obs;
@@ -76,6 +76,7 @@ class HomeGateModel extends GetxController {
 
   Timer? speedUpdateTimer;
   Timer? _stageTimer;
+  Timer? _premiumCheckTimer;
 
   onItemTapped(int index) {
     selectedBottomIndex.value = index;
@@ -307,29 +308,28 @@ class HomeGateModel extends GetxController {
 
       log("Response premium body: ${response.body}");
 
-      if (response.statusCode != 200) {
-        log("Error fetching premium data. Status: ${response.statusCode}");
-        proActive.value = false;
-        subscription.value = null;
-        update();
-        return;
-      }
-
-      // if message is unthenticated then logout user
+      // if (response.statusCode != 200) {
+      //   log("Error fetching premium data. Status: ${response.statusCode}");
+      //   proActive.value = false;
+      //   subscription.value = null;
+      //   update();
+      //   return;
+      // }
 
       final data = jsonDecode(response.body);
 
-      // if (data["message"] == "unauthenticated") {
-      //   log("Unauthenticated. Logging out user.");
-      //   // ERASE  the storage
-      //   SharedPreferences prefs = await SharedPreferences.getInstance();
-      //   await prefs.clear();
-      //   // navigate the user to login screen
-      //   Get.to(Auth());
+      // Check if the response indicates unauthenticated user
+      if (data['message'] != null) {
+        String message = data['message'].toString().toLowerCase();
+        log("Checking message: '$message' for unauthenticated");
+        if (message.contains('unauthenticated')) {
+          log("User is unauthenticated. Clearing storage and redirecting to auth.");
+          await _clearStorageAndRedirectToAuth();
+          return;
+        }
+      }
 
-      //   // authProvider.shatter();
-      //   // call the logout function from CipherGateModel
-      // }
+      
       final subscriptionResponse = ActivePlanResponse.fromJson(data);
 
       if (subscriptionResponse.status &&
@@ -338,8 +338,8 @@ class HomeGateModel extends GetxController {
         subscription.value = sub;
 
         // Parse expiry dates
-        DateTime expiry = sub.endsAt ?? DateTime.now();
-        DateTime graceExpiry = sub.graceEndsAt ?? expiry;
+        DateTime expiry = sub.endsAt;
+        DateTime graceExpiry = sub.graceEndsAt;
 
         expiryAt.value = expiry;
 
@@ -362,6 +362,59 @@ class HomeGateModel extends GetxController {
       proActive.value = false;
       subscription.value = null;
       update();
+    }
+  }
+
+  // Start periodic premium check every 3 seconds
+  void startPremiumCheck() {
+    stopPremiumCheck(); // Stop any existing timer
+    log("Starting periodic premium check every 3 seconds");
+    _premiumCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      await getPre();
+    });
+  }
+
+  // Stop premium check timer
+  void stopPremiumCheck() {
+    _premiumCheckTimer?.cancel();
+    _premiumCheckTimer = null;
+  }
+
+  Future<void> _clearStorageAndRedirectToAuth() async {
+    try {
+      // Clear all stored preferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      
+      // Reset all relevant reactive values
+      proActive.value = false;
+      subscription.value = null;
+      srvList.clear();
+      srvFiltered.clear();
+      
+      // Reset VPN state
+  // disconnect both pns 
+
+  if (selectedProtocol == Proto.wireguard) {
+    await dWireguard();
+  } else {
+    await dIkeav2(Get.context!);
+  }
+
+      // Stop all running timers
+      stopMonitor();
+      stopPremiumCheck();
+      _stageTimer?.cancel();
+      _stageTimer = null;
+      
+      update();
+      
+      // Navigate to auth screen
+      Get.offAll(() => Auth());
+      
+      log("Storage cleared and user redirected to auth screen.");
+    } catch (e) {
+      log("Error clearing storage and redirecting: $e");
     }
   }
 
