@@ -19,6 +19,10 @@ class SafeNetApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      // add a trasction left to right when navigating between pages
+
+      defaultTransition: Transition.rightToLeft,
+
       title: 'SafeNet VPN',
       themeMode: ThemeMode.dark,
       debugShowCheckedModeBanner: false,

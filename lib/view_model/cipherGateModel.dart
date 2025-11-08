@@ -38,49 +38,79 @@ class CipherGateModel extends GetxController {
     try {
       flux.value = true;
       update();
+      
+      // Validation
+      if (idA.text.trim().isEmpty || idB.text.trim().isEmpty) {
+        _flash(ctx, EvaIcons.alertCircle, "Error", "Email and password are required", Colors.red);
+        flux.value = false;
+        update();
+        return;
+      }
+
       var hdr = {'Accept': 'application/json'};
       var rsp = await net.post(
         Uri.parse(Utils.LOGIN_URL),
         headers: hdr,
         body: {
-          "email": idA.text,
+          "email": idA.text.trim(),
           "password": idB.text,
         },
       );
 
       var body = jsonDecode(rsp.body);
-      log("Alpha:$body");
-      if (body["status"] == true) {
-        SharedPreferences box = await SharedPreferences.getInstance();
-        await box.setBool('k', true);
-        await box.setString('e', body['user']['email']);
-        await box.setString('n', body['user']['slug']);
-        await box.setString('r', body['user']['role']);
-        await box.setString('p', idB.text);
-        await box.setString('uid', body['user']['id'].toString());
-        await box.setString('t', body["access_token"]);
+      log("Alpha Response: $body");
+      
+      if (rsp.statusCode == 200 || rsp.statusCode == 201) {
+        if (body["status"] == true) {
+          SharedPreferences box = await SharedPreferences.getInstance();
+          await box.setBool('k', true);
+          await box.setString('e', body['user']['email']);
+          await box.setString('n', body['user']['slug']);
+          await box.setString('r', body['user']['role']);
+          await box.setString('p', idB.text);
+          await box.setString('uid', body['user']['id'].toString());
+          await box.setString('t', body["access_token"]);
 
-        idA.clear();
-        idB.clear();
+          idA.clear();
+          idB.clear();
+          flux.value = false;
+          update();
+
+          _flash(ctx, EvaIcons.checkmarkCircle, "Success", "Login successful", Colors.green);
+
+          var q = Get.find<HomeGateModel>();
+          q.onItemTapped(0);
+
+          Navigator.of(ctx).pushReplacement(
+            MaterialPageRoute(builder: (_) => Bottomnav()),
+          );
+        } else {
+          // Server returned status false
+          String errorMsg = body["message"] ?? "Login failed";
+          _flash(ctx, EvaIcons.alertCircle, "Login Failed", errorMsg, Colors.red);
+          flux.value = false;
+          update();
+        }
+      } else if (rsp.statusCode == 401) {
+        _flash(ctx, EvaIcons.alertCircle, "Authentication Failed", "Invalid email or password", Colors.red);
         flux.value = false;
         update();
-
-        var q = Get.find<HomeGateModel>();
-        q.onItemTapped(0);
-
-        Navigator.of(ctx).pushReplacement(
-          MaterialPageRoute(builder: (_) => Bottomnav()),
-        );
+      } else if (rsp.statusCode == 422) {
+        String errorMsg = body["message"] ?? "Validation error";
+        _flash(ctx, EvaIcons.alertCircle, "Validation Error", errorMsg, Colors.red);
+        flux.value = false;
+        update();
       } else {
-        _flash(ctx, EvaIcons.alertCircle, "Error", body["message"], Colors.red);
+        String errorMsg = body["message"] ?? "Login failed. Please try again";
+        _flash(ctx, EvaIcons.alertCircle, "Error", errorMsg, Colors.red);
         flux.value = false;
         update();
       }
     } catch (err) {
-      log("AlphaErr:$err");
+      log("AlphaErr: $err");
       flux.value = false;
       update();
-      _flash(ctx, EvaIcons.alertCircle, "Error", "Login failure", Colors.red);
+      _flash(ctx, EvaIcons.alertCircle, "Connection Error", "Unable to connect to server. Please check your internet connection", Colors.red);
     }
   }
 
@@ -89,32 +119,84 @@ class CipherGateModel extends GetxController {
       flux.value = true;
       update();
 
+      // Validation
+      if (idC.text.trim().isEmpty || idA.text.trim().isEmpty || idB.text.trim().isEmpty) {
+        _flash(ctx, EvaIcons.alertCircle, "Error", "All fields are required", Colors.red);
+        flux.value = false;
+        update();
+        return;
+      }
+
+      if (idB.text.length < 6) {
+        _flash(ctx, EvaIcons.alertCircle, "Error", "Password must be at least 6 characters", Colors.red);
+        flux.value = false;
+        update();
+        return;
+      }
+
       var hdr = {'Accept': 'application/json'};
       var rsp = await net.post(
         Uri.parse(Utils.SIGN_UP_URL),
         headers: hdr,
         body: {
-          "name": idC.text,
-          "email": idA.text,
+          "name": idC.text.trim(),
+          "email": idA.text.trim(),
           "password": idB.text,
         },
       );
 
       var body = jsonDecode(rsp.body);
-      log("Beta:$body");
+      log("Beta Response: $body");
 
       if (body["status"] == true) {
+        // Success
         idC.clear();
         idA.clear();
         idB.clear();
         flux.value = false;
         update();
-        _flash(ctx, EvaIcons.checkmarkCircle, "OK", "Registered", Colors.green);
+        
+        _flash(ctx, EvaIcons.checkmarkCircle, "Success", "Account created successfully! Please login", Colors.green);
+        
+        // Switch to login mode after successful signup
+        pivotView(false);
+      } else {
+        // Handle error response
+        flux.value = false;
+        update();
+        
+        String errorMsg = "Registration failed";
+        
+        // Check if errors array exists
+        if (body["errors"] != null) {
+          if (body["errors"] is List && (body["errors"] as List).isNotEmpty) {
+            // errors is a List - get first error
+            errorMsg = body["errors"][0].toString();
+          } else if (body["errors"] is Map) {
+            // errors is a Map - get first error message
+            var errors = body["errors"] as Map;
+            if (errors.isNotEmpty) {
+              var firstError = errors.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMsg = firstError[0].toString();
+              } else {
+                errorMsg = firstError.toString();
+              }
+            }
+          } else if (body["errors"] is String) {
+            errorMsg = body["errors"];
+          }
+        } else if (body["message"] != null) {
+          errorMsg = body["message"];
+        }
+        
+        _flash(ctx, EvaIcons.alertCircle, "Registration Failed", errorMsg, Colors.red);
       }
     } catch (err) {
-      log("BetaErr:$err");
+      log("BetaErr: $err");
       flux.value = false;
       update();
+      _flash(ctx, EvaIcons.alertCircle, "Connection Error", "Unable to connect to server. Please check your internet connection", Colors.red);
     }
   }
 
@@ -122,27 +204,52 @@ class CipherGateModel extends GetxController {
     try {
       flux.value = true;
       update();
+      
+      // Validation
+      if (idA.text.trim().isEmpty) {
+        _flash(ctx, EvaIcons.alertCircle, "Error", "Email is required", Colors.red);
+        flux.value = false;
+        update();
+        return;
+      }
+
       var hdr = {'Accept': 'application/json'};
       var rsp = await net.post(
         Uri.parse(Utils.FORGOT_PASSWORD_URL),
         headers: hdr,
-        body: {"email": idA.text},
+        body: {"email": idA.text.trim()},
       );
 
       var body = jsonDecode(rsp.body);
-      if (body["status"] == true) {
-        idA.clear();
+      log("Gamma Response: $body");
+      
+      if (rsp.statusCode == 200 || rsp.statusCode == 201) {
+        if (body["status"] == true) {
+          idA.clear();
+          flux.value = false;
+          update();
+          _flash(ctx, EvaIcons.checkmarkCircle, "Success", "Password reset link sent to your email", Colors.green);
+        } else {
+          String errorMsg = body["message"] ?? "Failed to send reset link";
+          _flash(ctx, EvaIcons.alertCircle, "Error", errorMsg, Colors.red);
+          flux.value = false;
+          update();
+        }
+      } else if (rsp.statusCode == 404) {
+        _flash(ctx, EvaIcons.alertCircle, "Not Found", "Email not found. Please check and try again", Colors.red);
         flux.value = false;
         update();
-        _flash(ctx, EvaIcons.checkmarkCircle, "OK", "Reset link sent", Colors.green);
       } else {
+        String errorMsg = body["message"] ?? "Failed to send reset link";
+        _flash(ctx, EvaIcons.alertCircle, "Error", errorMsg, Colors.red);
         flux.value = false;
         update();
       }
     } catch (err) {
-      log("GammaErr:$err");
+      log("GammaErr: $err");
       flux.value = false;
       update();
+      _flash(ctx, EvaIcons.alertCircle, "Connection Error", "Unable to connect to server. Please check your internet connection", Colors.red);
     }
   }
 
@@ -170,17 +277,17 @@ class CipherGateModel extends GetxController {
 
       var rsp = await net.get(Uri.parse(Utils.USER_URL), headers: hdr);
       var body = jsonDecode(rsp.body);
-      log("Probe:$body");
+      log("Probe: $body");
 
       if (body['status'] == true) {
         vault = UserResponse.fromJson(body);
         update();
       } else {
-        log("ProbeFail:${body['message']}");
+        log("ProbeFail: ${body['message']}");
       }
     } catch (err) {
-      log("ProbeErr:$err");
-      _flash(ctx, EvaIcons.alertCircle, "Error", "Failed to load user", Colors.red);
+      log("ProbeErr: $err");
+      // Silently log the error without showing snackbar
     }
   }
 
