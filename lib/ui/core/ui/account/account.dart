@@ -107,7 +107,7 @@ class Account extends StatelessWidget {
                       const SizedBox(height: 18),
                       DetailRow(
                         icon: Icons.person,
-                        title: provider.identity!.name,
+                        title: provider.identity?.name ?? 'Not available',
                         subtitle: 'Username',
                       ),
                       const Divider(
@@ -117,7 +117,7 @@ class Account extends StatelessWidget {
                       ),
                       DetailRow(
                         icon: Icons.email,
-                        title: provider.identity!.email,
+                        title: provider.identity?.email ?? 'Not available',
                         subtitle: 'Email address',
                       ),
                       const Divider(

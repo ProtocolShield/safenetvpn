@@ -7,13 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_vpn/state.dart';
 import 'package:http/http.dart' as http;
 import 'package:dart_ping/dart_ping.dart';
-import 'package:http/http.dart' show post;
+
 import 'package:safenetvpn/domain/models/plan.dart';
-import 'package:safenetvpn/ui/core/ui/auth/auth.dart';
+import 'package:safenetvpn/ui/core/ui/auth/auth.dart' show Auth;
 import 'dart:io' show Platform, InternetAddress;
 
 import 'package:safenetvpn/utils/utils.dart' show Utils;
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
+
 import 'package:safenetvpn/view_model/cipherGateModel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_vpn/flutter_vpn.dart' show FlutterVpn;
@@ -31,6 +32,7 @@ import 'package:safenetvpn/domain/models/subscription.dart'
     show ActivePlanResponse, Subscription;
 import 'package:wireguard_flutter/wireguard_flutter_platform_interface.dart'
     show VpnStage, WireGuardFlutterInterface;
+import 'package:safenetvpn/services/analytics_service.dart';
 
 enum Proto { wireguard, ikeav2 }
 
@@ -53,14 +55,14 @@ class HomeGateModel extends GetxController {
   var busyFlag = false.obs;
   var proActive = false.obs;
   var expiryAt = DateTime.now().obs;
- var plans = <PlanModel>[].obs;
+  var plans = <PlanModel>[].obs;
 
   var subscription = Rxn<Subscription>();
   var isAdblock = false.obs;
   var fbSubjectCtrl = TextEditingController().obs;
   var fbMessageCtrl = TextEditingController().obs;
 
-  Proto selectedProtocol = Proto.ikeav2;
+  Rx<Proto> selectedProtocol = Proto.wireguard.obs;
 
   bool _autoSelectProtocol = false;
   bool get autoSelectProtocol => _autoSelectProtocol;
@@ -78,13 +80,30 @@ class HomeGateModel extends GetxController {
   Timer? _stageTimer;
   Timer? _premiumCheckTimer;
 
+  // Helper method to get consistent platform name
+  String getPlatformName() {
+    if (Platform.isAndroid) {
+      return 'android';
+    } else if (Platform.isIOS) {
+      return 'ios';
+    } else if (Platform.isWindows) {
+      return 'windows';
+    } else if (Platform.isMacOS) {
+      return 'macos';
+    } else if (Platform.isLinux) {
+      return 'linux';
+    } else {
+      return 'desktop';
+    }
+  }
+
   onItemTapped(int index) {
     selectedBottomIndex.value = index;
     update();
   }
 
   setProtocol(Proto protocol) async {
-    selectedProtocol = protocol;
+    selectedProtocol.value = protocol;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString(
       'selectedProtocol',
@@ -146,9 +165,12 @@ class HomeGateModel extends GetxController {
     String? proto = prefs.getString('selectedProtocol');
     bool autoSelect = prefs.getBool('autoSelectProtocol') ?? false;
     if (proto == 'wireguard') {
-      selectedProtocol = Proto.wireguard;
+      selectedProtocol.value = Proto.wireguard;
+    } else if (proto == 'ikeav2') {
+      selectedProtocol.value = Proto.ikeav2;
     } else {
-      selectedProtocol = Proto.ikeav2;
+      // Default to WireGuard on first install
+      selectedProtocol.value = Proto.wireguard;
     }
     _autoSelectProtocol = autoSelect;
     update();
@@ -323,13 +345,14 @@ class HomeGateModel extends GetxController {
         String message = data['message'].toString().toLowerCase();
         log("Checking message: '$message' for unauthenticated");
         if (message.contains('unauthenticated')) {
-          log("User is unauthenticated. Clearing storage and redirecting to auth.");
+          log(
+            "User is unauthenticated. Clearing storage and redirecting to auth.",
+          );
           await _clearStorageAndRedirectToAuth();
           return;
         }
       }
 
-      
       final subscriptionResponse = ActivePlanResponse.fromJson(data);
 
       if (subscriptionResponse.status &&
@@ -369,7 +392,9 @@ class HomeGateModel extends GetxController {
   void startPremiumCheck() {
     stopPremiumCheck(); // Stop any existing timer
     log("Starting periodic premium check every 3 seconds");
-    _premiumCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    _premiumCheckTimer = Timer.periodic(const Duration(seconds: 3), (
+      timer,
+    ) async {
       await getPre();
     });
   }
@@ -385,33 +410,33 @@ class HomeGateModel extends GetxController {
       // Clear all stored preferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      
+
       // Reset all relevant reactive values
       proActive.value = false;
       subscription.value = null;
       srvList.clear();
       srvFiltered.clear();
-      
-      // Reset VPN state
-  // disconnect both pns 
 
-  if (selectedProtocol == Proto.wireguard) {
-    await dWireguard();
-  } else {
-    await dIkeav2(Get.context!);
-  }
+      // Reset VPN state
+      // disconnect both pns
+
+      if (selectedProtocol == Proto.wireguard) {
+        await dWireguard();
+      } else {
+        await dIkeav2(Get.context!);
+      }
 
       // Stop all running timers
       stopMonitor();
       stopPremiumCheck();
       _stageTimer?.cancel();
       _stageTimer = null;
-      
+
       update();
-      
+
       // Navigate to auth screen
       Get.offAll(() => Auth());
-      
+
       log("Storage cleared and user redirected to auth screen.");
     } catch (e) {
       log("Error clearing storage and redirecting: $e");
@@ -508,119 +533,113 @@ class HomeGateModel extends GetxController {
   //   }
   // }
 
-  Future<bool> ruinvps(String serverUrl) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final String? name = prefs.getString('n');
-      final String? password = prefs.getString('p');
+  // Future<bool> ruinvps(String serverUrl) async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final String? name = prefs.getString('n');
+  //     final String? password = prefs.getString('p');
 
-      log("Name is $name");
-      log("Password is $password");
+  //     log("Name is $name");
+  //     log("Password is $password");
 
-      if (name == null || password == null) {
-        log("Name or password is missing");
-        return false;
-      }
+  //     if (name == null || password == null) {
+  //       log("Name or password is missing");
+  //       return false;
+  //     }
 
-      final String platform = Platform.isAndroid
-          ? 'android'
-          : Platform.isIOS
-          ? 'ios'
-          : Platform.isLinux
-          ? 'linux'
-          : 'desktop';
+  //     final String platform = getPlatformName();
 
-      const headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-API-Token': 'a3f7b9c2-d1e5-4f68-8a0b-95c6e7f4d8a1',
-      };
+  //     const headers = {
+  //       'Content-Type': 'application/json',
+  //       'Accept': 'application/json',
+  //       'X-API-Token': 'a3f7b9c2-d1e5-4f68-8a0b-95c6e7f4d8a1',
+  //     };
 
-      log("Name_platform is that ${name}_$platform");
-      log("Password is that $password");
+  //     log("Name_platform is that ${name}_$platform");
+  //     log("Password is that $password");
 
-      final firstResponse = await post(
-        Uri.parse("$serverUrl/api/ikev2/clients/generate"),
-        headers: headers,
-        body: jsonEncode({"name": "${name}_$platform", "password": password}),
-      );
+  //     final firstResponse = await post(
+  //       Uri.parse("$serverUrl/api/ikev2/clients/generate"),
+  //       headers: headers,
+  //       body: jsonEncode({"name": "${name}_$platform", "password": password}),
+  //     );
 
-      final secondResponse = await post(
-        Uri.parse("$serverUrl/api/clients/generate"),
-        headers: headers,
-        body: jsonEncode({"name": "${name}_$platform"}),
-      );
+  //     final secondResponse = await post(
+  //       Uri.parse("$serverUrl/api/clients/generate"),
+  //       headers: headers,
+  //       body: jsonEncode({"name": "${name}_$platform"}),
+  //     );
 
-      final firstBody = jsonDecode(firstResponse.body);
-      final secondBody = jsonDecode(secondResponse.body);
+  //     final firstBody = jsonDecode(firstResponse.body);
+  //     final secondBody = jsonDecode(secondResponse.body);
 
-      if (firstBody["error"] != null) {
-        final deleteResponse = await http.delete(
-          Uri.parse("$serverUrl/api/ikev2/clients/${name}_$platform"),
-          headers: headers,
-        );
+  //     if (firstBody["error"] != null) {
+  //       final deleteResponse = await http.delete(
+  //         Uri.parse("$serverUrl/api/ikev2/clients/${name}_$platform"),
+  //         headers: headers,
+  //       );
 
-        log("Status ikev2 ${deleteResponse.statusCode}");
-        log("Status body ${deleteResponse.body}");
+  //       log("Status ikev2 ${deleteResponse.statusCode}");
+  //       log("Status body ${deleteResponse.body}");
 
-        if (deleteResponse.statusCode == 200) {
-          final newResponse = await http.post(
-            Uri.parse("$serverUrl/api/ikev2/clients/generate"),
-            headers: headers,
-            body: jsonEncode({
-              "name": "${name}_$platform",
-              "password": password,
-            }),
-          );
+  //       if (deleteResponse.statusCode == 200) {
+  //         final newResponse = await http.post(
+  //           Uri.parse("$serverUrl/api/ikev2/clients/generate"),
+  //           headers: headers,
+  //           body: jsonEncode({
+  //             "name": "${name}_$platform",
+  //             "password": password,
+  //           }),
+  //         );
 
-          log("Response is that ${newResponse.body}");
+  //         log("Response is that ${newResponse.body}");
 
-          final responseBody = jsonDecode(newResponse.body);
-          if (responseBody["success"] == true) {
-            log("Registered successfully on $serverUrl");
-            return true;
-          } else {
-            log("Registration failed on $serverUrl");
-            return false;
-          }
-        }
-      }
+  //         final responseBody = jsonDecode(newResponse.body);
+  //         if (responseBody["success"] == true) {
+  //           log("Registered successfully on $serverUrl");
+  //           return true;
+  //         } else {
+  //           log("Registration failed on $serverUrl");
+  //           return false;
+  //         }
+  //       }
+  //     }
 
-      if (secondBody["error"] != null) {
-        final deleteResponse = await http.delete(
-          Uri.parse("$serverUrl/api/clients/${name}_$platform"),
-          headers: headers,
-        );
-        log("Status wireguard ${deleteResponse.statusCode}");
-        log("Status body ${deleteResponse.body}");
-        if (deleteResponse.statusCode == 200) {
-          final newResponse = await http.post(
-            Uri.parse("$serverUrl/api/clients/generate"),
-            headers: headers,
-            body: jsonEncode({
-              "name": "${name}_$platform",
-              "password": password,
-            }),
-          );
-          log("Response is that ${newResponse.body}");
+  //     if (secondBody["error"] != null) {
+  //       final deleteResponse = await http.delete(
+  //         Uri.parse("$serverUrl/api/clients/${name}_$platform"),
+  //         headers: headers,
+  //       );
+  //       log("Status wireguard ${deleteResponse.statusCode}");
+  //       log("Status body ${deleteResponse.body}");
+  //       if (deleteResponse.statusCode == 200) {
+  //         final newResponse = await http.post(
+  //           Uri.parse("$serverUrl/api/clients/generate"),
+  //           headers: headers,
+  //           body: jsonEncode({
+  //             "name": "${name}_$platform",
+  //             "password": password,
+  //           }),
+  //         );
+  //         log("Response is that ${newResponse.body}");
 
-          final responseBody = jsonDecode(newResponse.body);
-          if (responseBody["success"] == true) {
-            log("Registered successfully on $serverUrl");
-            return true;
-          } else {
-            log("Registration failed on $serverUrl");
-            return false;
-          }
-        }
-      }
+  //         final responseBody = jsonDecode(newResponse.body);
+  //         if (responseBody["success"] == true) {
+  //           log("Registered successfully on $serverUrl");
+  //           return true;
+  //         } else {
+  //           log("Registration failed on $serverUrl");
+  //           return false;
+  //         }
+  //       }
+  //     }
 
-      return true;
-    } catch (e) {
-      log("Exception during registration on $serverUrl: $e");
-      return false;
-    }
-  }
+  //     return true;
+  //   } catch (e) {
+  //     log("Exception during registration on $serverUrl: $e");
+  //     return false;
+  //   }
+  // }
 
   Future<void> tVpn(BuildContext context) async {
     // Logic to toggle VPN connection
@@ -725,13 +744,7 @@ class HomeGateModel extends GetxController {
       final prefs = await SharedPreferences.getInstance();
       final String? name = prefs.getString('n');
 
-      final String platform = Platform.isAndroid
-          ? 'android'
-          : Platform.isIOS
-          ? 'ios'
-          : Platform.isWindows
-          ? 'windows'
-          : 'macos';
+      final String platform = getPlatformName();
 
       const headers = {
         'Content-Type': 'application/json',
@@ -781,6 +794,17 @@ class HomeGateModel extends GetxController {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('connectTime', DateTime.now().toString());
 
+      // Track session start
+      AnalyticsService().trackEvent(
+        'vpn_session_start',
+        parameters: {
+          'protocol': 'WireGuard',
+          'server': domain,
+          'platform': getPlatformName(),
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+
       cfgLoading.value = true;
       vpnConnectionState.value = MyVpnConnectState.connecting;
       update();
@@ -788,9 +812,17 @@ class HomeGateModel extends GetxController {
       // Add a short delay to allow UI to show 'connecting' state
       await Future.delayed(const Duration(milliseconds: 700));
 
-      var isRegistered = await ruinvps('http://$domain:5000');
+      var isRegistered = await registerUserInVPS('http://$domain:5000');
       if (!isRegistered) {
         log("Failed to register user in VPS");
+
+        // Track connection failure
+        AnalyticsService().trackVpnConnection(
+          protocol: 'WireGuard',
+          serverLocation: domain,
+          success: false,
+        );
+
         cfgLoading.value = false;
         busyFlag.value = false;
         update();
@@ -805,13 +837,31 @@ class HomeGateModel extends GetxController {
         return false;
       }
       final config = await selectedWirVPNConfig('http://$domain:5000', context);
-
+      log("WireGuard config: $config");
       final success = await _wireguardEngine.startWireguard(
         server: domain,
         serverName: 'United States',
         wireguardConfig: config!,
       );
       speedMonitor();
+
+      // Track VPN connection success
+      AnalyticsService().trackVpnConnection(
+        protocol: 'WireGuard',
+        serverLocation: domain,
+        success: true,
+      );
+
+      // Track server usage
+      AnalyticsService().trackEvent(
+        'vpn_server_used',
+        parameters: {
+          'server_name': domain,
+          'protocol': 'WireGuard',
+          'platform': getPlatformName(),
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
 
       cfgLoading.value = false;
       busyFlag.value = false;
@@ -837,6 +887,33 @@ class HomeGateModel extends GetxController {
 
       if (success) {
         log("Disconnected from WireGuard VPN");
+
+        // Calculate session duration
+        final prefs = await SharedPreferences.getInstance();
+        final connectTimeStr = prefs.getString('connectTime');
+        if (connectTimeStr != null) {
+          final connectTime = DateTime.parse(connectTimeStr);
+          final duration = DateTime.now().difference(connectTime);
+
+          // Track session end with duration
+          AnalyticsService().trackEvent(
+            'vpn_session_end',
+            parameters: {
+              'protocol': 'WireGuard',
+              'server': srvList[srvIndex.value].name,
+              'platform': getPlatformName(),
+              'duration_seconds': duration.inSeconds.toString(),
+              'timestamp': DateTime.now().toIso8601String(),
+            },
+          );
+        }
+
+        // Track VPN disconnection
+        AnalyticsService().trackVpnDisconnection(
+          protocol: 'WireGuard',
+          serverLocation: srvList[srvIndex.value].name,
+        );
+
         busyFlag.value = false;
         vpnConnectionState.value = MyVpnConnectState.disconnected;
         stopMonitor();
@@ -869,9 +946,17 @@ class HomeGateModel extends GetxController {
       vpnConnectionState.value = MyVpnConnectState.connecting;
       update();
 
-      bool isRegistered = await ruinvps('http://$ip:5000');
+      bool isRegistered = await registerUserInVPS('http://$ip:5000');
       if (!isRegistered) {
         log("Failed to register user in VPS");
+
+        // Track connection failure
+        AnalyticsService().trackVpnConnection(
+          protocol: 'IKEv2',
+          serverLocation: ip,
+          success: false,
+        );
+
         cfgLoading.value = false;
         showCustomSnackBar(
           context,
@@ -885,15 +970,21 @@ class HomeGateModel extends GetxController {
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString('connectTime', DateTime.now().toString());
+
+      // Track session start
+      AnalyticsService().trackEvent(
+        'vpn_session_start',
+        parameters: {
+          'protocol': 'IKEv2',
+          'server': ip,
+          'platform': getPlatformName(),
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
+
       // Keep _isGettingConfig true until after initiating connection
 
-      final String platform = Platform.isAndroid
-          ? 'android'
-          : Platform.isIOS
-          ? 'ios'
-          : Platform.isWindows
-          ? 'windows'
-          : 'macos';
+      final String platform = getPlatformName();
 
       var name = prefs.getString('n') ?? '';
       var password = prefs.getString('p') ?? '';
@@ -917,6 +1008,24 @@ class HomeGateModel extends GetxController {
 
       await ikeav2Engine.connectTheIKEAV2(ip, username, password);
       speedMonitor();
+
+      // Track VPN connection success
+      AnalyticsService().trackVpnConnection(
+        protocol: 'IKEv2',
+        serverLocation: ip,
+        success: true,
+      );
+
+      // Track server usage
+      AnalyticsService().trackEvent(
+        'vpn_server_used',
+        parameters: {
+          'server_name': ip,
+          'protocol': 'IKEv2',
+          'platform': getPlatformName(),
+          'timestamp': DateTime.now().toIso8601String(),
+        },
+      );
 
       log("IKEv2 VPN connected successfully");
       cfgLoading.value = false;
@@ -950,6 +1059,33 @@ class HomeGateModel extends GetxController {
       await Future.delayed(const Duration(milliseconds: 700));
 
       log("IKEv2 disconnected successfully");
+
+      // Calculate session duration
+      final prefs = await SharedPreferences.getInstance();
+      final connectTimeStr = prefs.getString('connectTime');
+      if (connectTimeStr != null) {
+        final connectTime = DateTime.parse(connectTimeStr);
+        final duration = DateTime.now().difference(connectTime);
+
+        // Track session end with duration
+        AnalyticsService().trackEvent(
+          'vpn_session_end',
+          parameters: {
+            'protocol': 'IKEv2',
+            'server': srvList[srvIndex.value].name,
+            'platform': getPlatformName(),
+            'duration_seconds': duration.inSeconds.toString(),
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        );
+      }
+
+      // Track VPN disconnection
+      AnalyticsService().trackVpnDisconnection(
+        protocol: 'IKEv2',
+        serverLocation: srvList[srvIndex.value].name,
+      );
+
       vpnConnectionState.value = MyVpnConnectState.disconnected;
       update();
 
@@ -1106,6 +1242,115 @@ class HomeGateModel extends GetxController {
       log("Exception occurred while fetching plans: $error");
       busyFlag.value = false;
       update();
+    }
+  }
+
+  Future<bool> registerUserInVPS(String serverUrl) async {
+    log("Registering user in VPS server: $serverUrl");
+    try {
+      log("Registering user in VPS server: $serverUrl");
+      final prefs = await SharedPreferences.getInstance();
+      final String? name = prefs.getString('n');
+      final String? password = prefs.getString('p');
+
+      if (name == null || password == null) {
+        log("Name or password is missing");
+        return false;
+      }
+
+      final String platform = Platform.isAndroid
+          ? 'android'
+          : Platform.isIOS
+          ? 'ios'
+          : 'desktop';
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-API-Token': 'a3f7b9c2-d1e5-4f68-8a0b-95c6e7f4d8a1',
+      };
+
+      final firstResponse = await http.post(
+        Uri.parse("$serverUrl/api/ikev2/clients/generate"),
+        headers: headers,
+        body: jsonEncode({"name": "${name}_$platform", "password": password}),
+      );
+
+      final secondResponse = await http.post(
+        Uri.parse("$serverUrl/api/clients/generate"),
+        headers: headers,
+        body: jsonEncode({"name": "${name}_$platform"}),
+      );
+
+      log("firstResponse: ${firstResponse.body}");
+      log("secondResponse: ${secondResponse.body}");
+
+      final firstBody = jsonDecode(firstResponse.body);
+      final secondBody = jsonDecode(secondResponse.body);
+
+      if (firstBody["error"] != null) {
+        var response = await http.delete(
+          Uri.parse(
+            "$serverUrl/api/ikev2/clients/${name.replaceAll(' ', '-')}_$platform",
+          ),
+          headers: headers,
+        );
+        if (response.statusCode == 200) {
+          final newResponse = await http.post(
+            Uri.parse("$serverUrl/api/ikev2/clients/generate"),
+            headers: headers,
+            body: jsonEncode({
+              "name": "${name.replaceAll(' ', '-')}_$platform",
+              "password": password,
+            }),
+          );
+
+          final responseBody = jsonDecode(newResponse.body);
+          if (responseBody["success"] == true) {
+            log("Registered successfully on $serverUrl");
+            return true;
+          } else {
+            log("Registration failed on $serverUrl");
+            return false;
+          }
+        }
+      }
+
+      if (secondBody["error"] != null) {
+        final deleteResponse = await http.delete(
+          Uri.parse("$serverUrl/api/clients/${name}_$platform"),
+          headers: headers,
+        );
+
+        log("Status wireguard ${deleteResponse.statusCode}");
+        log("Status body ${deleteResponse.body}");
+
+        if (deleteResponse.statusCode == 200) {
+          final newResponse = await http.post(
+            Uri.parse("$serverUrl/api/clients/generate"),
+            headers: headers,
+            body: jsonEncode({
+              "name": "${name}_$platform",
+              "password": password,
+            }),
+          );
+          log("Response is that ${newResponse.body}");
+
+          final responseBody = jsonDecode(newResponse.body);
+          if (responseBody["success"] == true) {
+            log("Registered successfully on $serverUrl");
+            return true;
+          } else {
+            log("Registration failed on $serverUrl");
+            return false;
+          }
+        }
+      }
+
+      return true;
+    } catch (e) {
+      log("Exception during registration on $serverUrl: $e");
+      return false;
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:eva_icons_flutter/eva_icons_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:math';
 
 class AiAssistantScreen extends StatefulWidget {
   const AiAssistantScreen({super.key});
@@ -12,10 +13,25 @@ class AiAssistantScreen extends StatefulWidget {
 class _AiAssistantScreenState extends State<AiAssistantScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final _random = Random();
 
   Color get bg => const Color(0xFF0F0F12);
   Color get card => const Color(0xFF232326);
   Color get muted => const Color(0xFF9A9AA0);
+
+  // List of random responses
+  final List<String> _randomResponses = [
+    "Thank you for your message! Our team will get back to you shortly.",
+    "We've received your inquiry and will be in touch with you soon.",
+    "Your message has been noted. The team will contact you in some time.",
+    "Thanks for reaching out! We'll get back to you as soon as possible.",
+    "We appreciate your message. Our support team will be in touch shortly.",
+    "Got it! Our team will review your message and respond soon.",
+    "Message received! We'll be in contact with you shortly.",
+    "Thank you for contacting us! The team will reach out to you soon.",
+    "We've got your message! Expect to hear from our team soon.",
+    "Your inquiry is important to us. We'll be in touch shortly.",
+  ];
 
   final List<ChatMessage> messages = [
     ChatMessage(
@@ -42,11 +58,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
     ),
   ];
 
+  // Method to get a random response
+  String _getRandomResponse() {
+    return _randomResponses[_random.nextInt(_randomResponses.length)];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        bottom: false,
         child: Column(
           children: [
             // Header
@@ -117,6 +137,22 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
                   _controller.clear();
                 });
                 scrollToEnd();
+
+                // Add random response after a short delay
+                Future.delayed(const Duration(milliseconds: 1000), () {
+                  if (mounted) {
+                    setState(() {
+                      messages.add(
+                        ChatMessage(
+                          text: _getRandomResponse(),
+                          isUser: false,
+                          timeLabel: 'now',
+                        ),
+                      );
+                    });
+                    scrollToEnd();
+                  }
+                });
               },
               controller: _controller,
             ),
@@ -294,11 +330,20 @@ class QuickActionsRow extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: const [
-          QuickChip(image: 'assets/images/privacyscan.png', label: 'Privacy Scan'),
+          QuickChip(
+            image: 'assets/images/privacyscan.png',
+            label: 'Privacy Scan',
+          ),
           SizedBox(width: 12),
-          QuickChip(image: 'assets/images/bestserver.png', label: 'Best Server'),
+          QuickChip(
+            image: 'assets/images/bestserver.png',
+            label: 'Best Server',
+          ),
           SizedBox(width: 12),
-          QuickChip(image: 'assets/images/usagestatistics.png', label: 'Usage Stats'),
+          QuickChip(
+            image: 'assets/images/usagestatistics.png',
+            label: 'Usage Stats',
+          ),
         ],
       ),
     );
@@ -321,18 +366,11 @@ class QuickChip extends StatelessWidget {
       ),
       child: Row(
         children: [
-            Image(
-            image: AssetImage(image),
-            width: 20,
-            height: 20,
-            ),
+          Image(image: AssetImage(image), width: 20, height: 20),
           const SizedBox(width: 8),
           Text(
             label,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w400,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400),
           ),
         ],
       ),
@@ -391,7 +429,7 @@ class Composer extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const Icon(EvaIcons.mic, color: Colors.white70),
+                        // const Icon(EvaIcons.mic, color: Colors.white70),
                         const SizedBox(width: 4),
                       ],
                     ),

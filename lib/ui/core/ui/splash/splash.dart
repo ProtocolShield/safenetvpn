@@ -47,7 +47,7 @@ class _SplashViewState extends State<SplashView> {
     repo.getsrvList(true);
     repo.sGettingStages();
     repo.myKillSwitch();
-    repo.autoC(context);
+    // repo.autoC(context);
     repo1.probe(context);
     repo.lServerFromLocal();
     repo.gPlans();
@@ -95,36 +95,44 @@ class _SplashViewState extends State<SplashView> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const SizedBox(height: 100),
-            Image.asset('assets/safenet.png', fit: BoxFit.cover, scale: 3.0),
-            const SizedBox(height: 20),
-            Image.asset(
-              'assets/images/safenettext.png',
-              fit: BoxFit.cover,
-              scale: 3.0,
-            ),
-            const SizedBox(height: 50),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Column(
               children: [
-                PercentageProgressBar(
-                  visualPercent: visualPercent,
-                  displayPercent: displayPercent,
+                SizedBox(height: 300),
+                Image.asset(
+                  'assets/safenet.png',
+                  fit: BoxFit.cover,
+                  scale: 2.0,
                 ),
+                const SizedBox(height: 30),
+                Image.asset('assets/psv.png', fit: BoxFit.cover, scale: 2.0),
               ],
             ),
-            const SizedBox(height: 10),
-            const Text(
-              "Initializing Secure Connection..",
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
+
+            Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    PercentageProgressBar(
+                      visualPercent: visualPercent,
+                      displayPercent: displayPercent,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  "Initializing Secure Connection..",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
             ),
-            const SizedBox(height: 20),
           ],
         ),
       ),

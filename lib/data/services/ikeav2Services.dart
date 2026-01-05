@@ -21,14 +21,13 @@ class Ikeav2EngineAndIpSecServices {
   Future<bool> connectTheIKEAV2(
     String server,
     String username,
-    String password
+    String password,
   ) async {
     try {
       await initIkev2();
       SharedPreferences prefs = await SharedPreferences.getInstance();
       bool? isKillSwitch = prefs.getBool('killSwitchEnabled');
       List<String>? selectedApps = prefs.getStringList('blocked_apps');
-
 
       await FlutterVpn.connectIkev2EAP(
         server: server,

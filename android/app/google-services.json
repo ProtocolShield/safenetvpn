@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "746888858332",
+    "project_id": "safenetvpn-e2446",
+    "storage_bucket": "safenetvpn-e2446.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:746888858332:android:ed9c362e04dd9f0e808219",
+        "android_client_info": {
+          "package_name": "com.example.safenetvpn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyChkNWPlvOof5VHS7fsNpYCrGOc2VNB3jo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

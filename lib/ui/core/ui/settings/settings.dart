@@ -19,7 +19,7 @@ class Settings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var authProvider = Get.find<CipherGateModel>();
+    var authProvider = Get.put<CipherGateModel>(CipherGateModel());
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -114,13 +114,10 @@ class Settings extends StatelessWidget {
                     },
                   ),
 
-                  GestureDetector(
-                    onTap: () {},
-                    child: SettingsWidget(
-                      imageData: "assets/images/connectionmode.png",
-                      title: "Connection Mode",
-                      isConnetionActive: true,
-                    ),
+                  SettingsWidget(
+                    imageData: "assets/images/connectionmode.png",
+                    title: "Connection Mode",
+                    isConnetionActive: true,
                   ),
 
                   GestureDetector(
@@ -214,9 +211,10 @@ class SettingsWidget extends StatefulWidget {
 }
 
 class _SettingsWidgetState extends State<SettingsWidget> {
+  var cont = Get.put<HomeGateModel>(HomeGateModel());
+
   @override
   Widget build(BuildContext context) {
-    var cont = Get.put<HomeGateModel>(HomeGateModel());
     return Container(
       height: 60, // Slightly increased for better image fit
       decoration: const BoxDecoration(color: Colors.transparent),
@@ -244,7 +242,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: 10),
                 Text(
                   widget.title,
                   style: const TextStyle(
@@ -263,16 +261,20 @@ class _SettingsWidgetState extends State<SettingsWidget> {
                       horizontal: 8,
                       vertical: 4,
                     ),
-                    child: Text(
-                      cont.selectedProtocol.name,
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                    child: Obx(
+                      () => Text(
+                        cont.selectedProtocol.value == Proto.wireguard
+                            ? "WireGuard"
+                            : "IKEv2",
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                const SizedBox(width: 8),
+
                 if (!widget.isConnetionActive)
                   Image.asset(
                     "assets/images/forward.png",
@@ -335,7 +337,7 @@ class _SettingsWidgetWithToggleState extends State<SettingsWidgetWithToggle> {
                   ),
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 10),
               Text(
                 widget.title,
                 style: const TextStyle(

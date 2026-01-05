@@ -47,16 +47,16 @@ class ForgotPassword extends StatelessWidget {
               ),
             ),
 
-             Text(
-                'Forgot Password?',
-                style: GoogleFonts.daysOne(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
+            Text(
+              'Forgot Password?',
+              style: GoogleFonts.daysOne(
+                color: Colors.white,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
               ),
-          
+              textAlign: TextAlign.center,
+            ),
+
             const SizedBox(height: 20),
             Text(
               "Please enter your email we will send you password reset link to your email",
@@ -79,15 +79,14 @@ class ForgotPassword extends StatelessWidget {
                 GradientTextField(
                   hintText: "Enter your email",
                   controller: provider.idA,
-                )
-              ]
+                ),
+              ],
             ),
             SizedBox(height: 15),
 
-            GestureDetector(
+            Obx(() => GestureDetector(
               onTap: () {
-                // Handle password reset logic here
-                provider.shatter(context);
+                provider.invokeGamma(context);
               },
               child: Container(
                 height: 60,
@@ -124,7 +123,7 @@ class ForgotPassword extends StatelessWidget {
                         ),
                       ),
               ),
-            ),
+            )),
 
             SizedBox(height: 20),
             GestureDetector(

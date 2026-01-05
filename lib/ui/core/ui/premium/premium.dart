@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:safenetvpn/view_model/homeGateModel.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:safenetvpn/services/analytics_service.dart';
 
 class Premium extends StatefulWidget {
   const Premium({super.key});
@@ -12,7 +14,7 @@ class Premium extends StatefulWidget {
 }
 
 class _PremiumState extends State<Premium> {
-  int selectedPlan = 0; 
+  int selectedPlan = 0;
   final controller = Get.put(HomeGateModel());
   bool isLoading = true;
 
@@ -32,11 +34,7 @@ class _PremiumState extends State<Premium> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Colors.white,
-          ),
-        ),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
       );
     }
 
@@ -107,16 +105,14 @@ class _PremiumState extends State<Premium> {
                         borderRadius: BorderRadius.circular(24),
                       ),
                       child: Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                        ),
+                        child: CircularProgressIndicator(color: Colors.white),
                       ),
                     );
                   }
 
                   // Use the selected plan instead of first/last
-                  final currentPlan = selectedPlan < controller.plans.length 
-                      ? controller.plans[selectedPlan] 
+                  final currentPlan = selectedPlan < controller.plans.length
+                      ? controller.plans[selectedPlan]
                       : controller.plans.first;
 
                   return Container(
@@ -178,63 +174,63 @@ class _PremiumState extends State<Premium> {
                             ),
                           ],
                         ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${currentPlan.name}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'Poppins',
+                        const SizedBox(height: 6),
+                        Text(
+                          '${currentPlan.name}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Poppins',
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${currentPlan.description}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontFamily: 'Poppins',
+                        const SizedBox(height: 8),
+                        Text(
+                          '${currentPlan.description}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontFamily: 'Poppins',
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Features List
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(14),
+                        const SizedBox(height: 16),
+                        // Features List
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              FeatureItem(
+                                icon: Icons.public,
+                                text: 'Unlimited high-speed servers worldwide',
+                                fontSize: 13,
+                              ),
+                              FeatureItem(
+                                icon: Icons.sports_esports,
+                                text:
+                                    'Access to secure streaming & gaming servers',
+                                fontSize: 13,
+                              ),
+                              FeatureItem(
+                                icon: Icons.lock,
+                                text: 'Military-grade encryption with no logs',
+                                fontSize: 13,
+                              ),
+                              FeatureItem(
+                                icon: Icons.cloud,
+                                text: '24/7 priority support',
+                                fontSize: 13,
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            FeatureItem(
-                              icon: Icons.public,
-                              text: 'Unlimited high-speed servers worldwide',
-                              fontSize: 13,
-                            ),
-                            FeatureItem(
-                              icon: Icons.sports_esports,
-                              text:
-                                  'Access to secure streaming & gaming servers',
-                              fontSize: 13,
-                            ),
-                            FeatureItem(
-                              icon: Icons.lock,
-                              text: 'Military-grade encryption with no logs',
-                              fontSize: 13,
-                            ),
-                            FeatureItem(
-                              icon: Icons.cloud,
-                              text: '24/7 priority support',
-                              fontSize: 13,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                      ],
+                    ),
+                  );
                 }),
                 const SizedBox(height: 28),
                 // Plan Options - Dynamic List
@@ -279,8 +275,11 @@ class _PremiumState extends State<Premium> {
                         ),
                         child: PlanOption(
                           index: index,
-                          title: '${controller.plans[index].name} \$${controller.plans[index].discountPrice}',
-                          trailing: controller.plans[index].isBestDeal ? 'Popular' : '${controller.plans[index].invoiceInterval} Billed',
+                          title:
+                              '${controller.plans[index].name} \$${controller.plans[index].discountPrice}',
+                          trailing: controller.plans[index].isBestDeal
+                              ? 'Popular'
+                              : '${controller.plans[index].invoiceInterval} Billed',
                           titleSize: 14,
                           trailingSize: 11,
                           selectedPlan: selectedPlan,
@@ -296,26 +295,62 @@ class _PremiumState extends State<Premium> {
                 }),
                 const SizedBox(height: 28),
                 // Continue Button
-                SizedBox(
-                  width: double.infinity,
-                  child: Container(
-                    height: 50,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12.0),
-                      gradient: LinearGradient(
-                        colors: [Colors.purple, Colors.blue],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                GestureDetector(
+                  onTap: () async {
+                    // Track payment button click
+                    if (selectedPlan < controller.plans.length) {
+                      AnalyticsService().trackPaymentClick(
+                        controller.plans[selectedPlan].name,
+                      );
+                    }
+
+                    final Uri url = Uri.parse(
+                      'https://psvpn.protocolshield.com/pricing',
+                    );
+                    try {
+                      bool launched = await launchUrl(
+                        url,
+                        mode: LaunchMode.externalApplication,
+                      );
+                      if (!launched) {
+                        // Fallback for older url_launcher versions or web
+                        // ignore: deprecated_member_use
+                        await launch(url.toString());
+                      }
+                    } catch (e) {
+                      debugPrint('URL launch error: $e');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Could not open the payment page: $e',
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      height: 50,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.0),
+                        gradient: LinearGradient(
+                          colors: [Colors.purple, Colors.blue],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'Continue to Payment',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
+                      child: const Text(
+                        'Continue to Payment',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                        ),
                       ),
                     ),
                   ),

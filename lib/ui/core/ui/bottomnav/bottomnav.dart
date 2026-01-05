@@ -26,12 +26,16 @@ class _BottomnavState extends State<Bottomnav> {
     repo.getsrvList(true);
     repo.sGettingStages();
     repo.myKillSwitch();
-    repo.autoC(context);
     repo.lServerFromLocal();
     repo1.probe(context);
     repo.getPre();
     repo.lProtocolFromStorage();
     repo.gPlans();
+    autoConnect();
+  }
+
+  autoConnect() async {
+    await repo.autoC(context);
   }
 
   @override
