@@ -290,9 +290,19 @@ flutter build linux --release
    - Switch protocols
    - Check network connection
 
-## 📄 License
+## 📄🔐 Proprietary Notice (License)
 
-This project is proprietary software. All rights reserved.
+This project is proprietary and owned by **Protocol Shield**.
+
+All rights reserved. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited without explicit written permission from the owner.
+
+This project may include confidential and protected components, including but not limited to:
+- Source code
+- Architecture design
+- Security logic
+- Data processing methods
+
+Violation may result in legal action. All rights reserved.
 
 ## 🤝 Support
 
