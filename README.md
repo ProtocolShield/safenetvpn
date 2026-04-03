@@ -291,25 +291,28 @@ flutter build linux --release
    - Check network connection
 
 ## 📄🔐 Proprietary Notice (License)
+---
 
-This project is proprietary and owned by **Protocol Shield**.
+This project is proprietary and owned by **ProtocolShield LLC**.
 
-All rights reserved. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited without explicit written permission from the owner.
+All rights reserved. Unauthorized copying, modification, distribution, or use of this software, in whole or in part, is strictly prohibited without explicit written permission from ProtocolShield LLC.
 
-This project may include confidential and protected components, including but not limited to:
+This project may contain confidential and protected components, including but not limited to:
 - Source code
 - Architecture design
-- Security logic
+- Security mechanisms
 - Data processing methods
 
-Violation may result in legal action. All rights reserved.
+This software is licensed, not sold. Any unauthorized use may result in legal action.
 
-## 🤝 Support
+---
 
-For support and issues:
-- In-app feedback system
-- Email: support@safenetvpn.com
-- Knowledge base: https://safenetvpn.com/help
+## 📧 Support & Contact
+
+For support, development, or administrative inquiries:
+
+- General Support: admin.ps@protocolshield.com  
+- Development Team: ps.dev@protocolshield.com  
 
 ---
 
