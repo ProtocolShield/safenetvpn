@@ -8,6 +8,7 @@ import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:safenetvpn/ui/core/ui/bottomnav/bottomnav.dart' show Bottomnav;
 import 'package:safenetvpn/ui/core/ui/onboarding/onboarding1.dart'
     show Onboarding1;
+import 'package:safenetvpn/services/tokenService.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -44,7 +45,11 @@ class _SplashViewState extends State<SplashView> {
     final repo = Get.put<HomeGateModel>(HomeGateModel());
     final repo1 = Get.put<CipherGateModel>(CipherGateModel());
 
+    // Log token diagnostics at startup (without await)
+    TokenService.logTokenDiagnostics();
+
     repo.getsrvList(true);
+    repo.fetchVpsServers(); // Fetch VPS servers after regular servers
     repo.sGettingStages();
     repo.myKillSwitch();
     // repo.autoC(context);

@@ -48,6 +48,60 @@ class Server {
   });
 
   factory Server.fromJson(Map<String, dynamic> json) {
+    List<SubServer> subServers = [];
+    
+    // Parse sub_servers if they exist
+    if (json['sub_servers'] != null && (json['sub_servers'] as List).isNotEmpty) {
+      subServers = (json['sub_servers'] as List)
+          .map((e) => SubServer.fromJson(e))
+          .toList();
+    } else {
+      // If no sub_servers, create a default one from the server data
+      // Try to extract IP/domain from the server object itself
+      String ip = '';
+      String domain = '';
+      
+      // Check if server has IP/domain fields directly
+      if (json['ip_address'] != null) {
+        ip = json['ip_address'].toString();
+      } else if (json['ipAddress'] != null) {
+        ip = json['ipAddress'].toString();
+      } else if (json['ip'] != null) {
+        ip = json['ip'].toString();
+      }
+      
+      if (json['domain'] != null) {
+        domain = json['domain'].toString();
+      } else if (json['host'] != null) {
+        domain = json['host'].toString();
+      }
+      
+      // Temporary fallback: use server ID as identifier if no IP/domain
+      // This should be replaced with actual VPS data from backend
+      if (ip.isEmpty && domain.isEmpty) {
+        // Try to use server ID or name - this is temporary until backend provides real IPs
+        int serverId = json['id'] ?? 0;
+        domain = 'vps-$serverId.psvpn.local'; // placeholder domain
+        print("⚠️  WARNING: No IP/domain in server response. Using placeholder: $domain");
+      }
+      
+      // Create a default SubServer with the server as VPS
+      subServers = [
+        SubServer(
+          id: json['id'] ?? 0,
+          serverId: json['id'] ?? 0,
+          name: json['name'] ?? 'Default',
+          status: json['status'] ?? 1,
+          vpsServer: VpsServer(
+            id: json['id'] ?? 0,
+            name: json['name'] ?? 'Default',
+            ipAddress: ip,
+            domain: domain,
+          ),
+        )
+      ];
+    }
+    
     return Server(
       id: json['id'],
       image: json['image'],
@@ -56,9 +110,7 @@ class Server {
       type: json['type'],
       status: json['status'],
       createdAt: json['created_at'],
-      subServers: (json['sub_servers'] as List)
-          .map((e) => SubServer.fromJson(e))
-          .toList(),
+      subServers: subServers,
     );
   }
 
@@ -152,6 +204,10 @@ class VpsServer {
   final String name;
   final String ipAddress;
   final String domain;
+  final String? username;
+  final String? password;
+  final int? port;
+  final String? privateKey;
   int? latency;
 
   VpsServer({
@@ -159,15 +215,41 @@ class VpsServer {
     required this.name,
     required this.ipAddress,
     required this.domain,
+    this.username,
+    this.password,
+    this.port,
+    this.privateKey,
     this.latency,
   });
 
   factory VpsServer.fromJson(Map<String, dynamic> json) {
+    // Try multiple possible field names for IP address
+    String ip = '';
+    if (json['ip_address'] != null) {
+      ip = json['ip_address'].toString();
+    } else if (json['ipAddress'] != null) {
+      ip = json['ipAddress'].toString();
+    } else if (json['ip'] != null) {
+      ip = json['ip'].toString();
+    }
+    
+    // Try multiple possible field names for domain
+    String domain = '';
+    if (json['domain'] != null) {
+      domain = json['domain'].toString();
+    } else if (json['host'] != null) {
+      domain = json['host'].toString();
+    }
+    
     return VpsServer(
-      id: json['id'],
-      name: json['name'],
-      ipAddress: json['ip_address'],
-      domain: json['domain'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? '',
+      ipAddress: ip,
+      domain: domain,
+      username: json['username'],
+      password: json['password'],
+      port: json['port'],
+      privateKey: json['private_key'],
       latency: json['latency'],
     );
   }
@@ -178,6 +260,10 @@ class VpsServer {
       'name': name,
       'ip_address': ipAddress,
       'domain': domain,
+      'username': username,
+      'password': password,
+      'port': port,
+      'private_key': privateKey,
       'latency': latency,
     };
   }

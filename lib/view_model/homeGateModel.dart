@@ -1,7 +1,7 @@
-// ignore_for_file: file_names, use_build_context_synchronously
+﻿// ignore_for_file: file_names, use_build_context_synchronously
 import 'dart:convert';
 import 'package:get/get.dart';
-import 'dart:async' show Timer;
+import 'dart:async' show Timer, TimeoutException;
 import 'dart:developer' show log;
 import 'package:flutter/material.dart';
 import 'package:flutter_vpn/state.dart';
@@ -21,7 +21,7 @@ import 'package:flutter_vpn/flutter_vpn.dart' show FlutterVpn;
 import 'package:safenetvpn/ui/core/ui/premium/premium.dart' show Premium;
 import 'package:wireguard_flutter/wireguard_flutter.dart' show WireGuardFlutter;
 import 'package:safenetvpn/domain/models/server.dart'
-    show Server, ServerResponse;
+    show Server, ServerResponse, VpsServer, SubServer;
 import 'package:safenetvpn/ui/widgets/customSnackBar.dart'
     show showCustomSnackBar;
 import 'package:safenetvpn/data/services/wireguardServices.dart'
@@ -61,6 +61,8 @@ class HomeGateModel extends GetxController {
   var isAdblock = false.obs;
   var fbSubjectCtrl = TextEditingController().obs;
   var fbMessageCtrl = TextEditingController().obs;
+  var serversLoading = false.obs;
+  var serversError = ''.obs;
 
   Rx<Proto> selectedProtocol = Proto.wireguard.obs;
 
@@ -1350,6 +1352,456 @@ class HomeGateModel extends GetxController {
       return true;
     } catch (e) {
       log("Exception during registration on $serverUrl: $e");
+      return false;
+    }
+  }
+
+  /// Fetch VPS servers list from the backend API
+  Future<void> fetchVpsServers() async {
+    try {
+      log("🔄 Fetching VPS servers list...");
+      busyFlag.value = true;
+      serversLoading.value = true;
+      serversError.value = '';
+      update();
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('t');
+
+      if (token == null || token.isEmpty) {
+        log("❌ No authentication token. Cannot fetch VPS servers.");
+        serversError.value = 'Authentication required. Please login again.';
+        busyFlag.value = false;
+        serversLoading.value = false;
+        update();
+        return;
+      }
+
+      var headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      final url = Utils.VPS_SERVERS;
+      log("📍 Fetching from: $url");
+
+      var response = await http.get(
+        Uri.parse(url),
+        headers: headers,
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw TimeoutException('VPS servers fetch timed out'),
+      );
+
+      log("Response status: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        log("✅ VPS Response received: ${data.toString().substring(0, 500)}...");
+        log("📊 Full response structure: $data");
+
+        if (data["status"] == true && data["vps_servers"] != null) {
+          List<dynamic> vpsServers = data["vps_servers"];
+          log("✅ Found ${vpsServers.length} VPS servers");
+
+          // Debug: Log first VPS server structure
+          if (vpsServers.isNotEmpty) {
+            log("📋 First VPS server structure: ${vpsServers[0]}");
+          }
+
+          // Update srvList with VPS server data
+          for (var server in srvList) {
+            List<dynamic> matchingVps = vpsServers
+                .where((vps) => vps["server_id"] == server.id)
+                .toList();
+
+            if (matchingVps.isNotEmpty) {
+              server.subServers.clear();
+              for (var vpsData in matchingVps) {
+                log("🔍 Processing VPS data: $vpsData");
+                
+                // Extract fields with multiple possible names
+                String ipAddress = vpsData["ip_address"] ?? vpsData["ip"] ?? vpsData["ipAddress"] ?? "";
+                String domain = vpsData["domain"] ?? vpsData["host"] ?? vpsData["server_url"] ?? "";
+                
+                SubServer subServer = SubServer(
+                  id: vpsData["id"] ?? 0,
+                  serverId: server.id,
+                  name: vpsData["name"] ?? "VPS-${vpsData['id']}",
+                  status: vpsData["status"] ?? 1,
+                  vpsServer: VpsServer(
+                    id: vpsData["id"] ?? 0,
+                    name: vpsData["name"] ?? "VPS-${vpsData['id']}",
+                    ipAddress: ipAddress,
+                    domain: domain,
+                    username: vpsData["username"],
+                    password: vpsData["password"],
+                    port: vpsData["port"],
+                    privateKey: vpsData["private_key"],
+                  ),
+                );
+                server.subServers.add(subServer);
+                log("✅ Added VPS: ${vpsData['name']} | IP: $ipAddress | Domain: $domain | User: ${vpsData['username']}");
+              }
+            }
+          }
+
+          serversError.value = '';
+          log("✅ VPS servers updated successfully");
+          update();
+        } else {
+          serversError.value = data['message'] ?? 'No VPS servers found';
+          log("⚠️  No VPS servers found in response");
+          log("📊 Response keys: ${data.keys.toList()}");
+        }
+      } else {
+        serversError.value = 'Failed to fetch VPS servers (Status: ${response.statusCode})';
+        log("❌ Failed to fetch VPS servers. Status: ${response.statusCode}");
+        log("   Response: ${response.body}");
+      }
+
+      busyFlag.value = false;
+      serversLoading.value = false;
+      update();
+    } on TimeoutException catch (e) {
+      log("⏱️  Timeout fetching VPS servers: $e");
+      serversError.value = 'Request timeout. Please try again.';
+      busyFlag.value = false;
+      serversLoading.value = false;
+      update();
+    } catch (e) {
+      log("❌ Error fetching VPS servers: $e");
+      serversError.value = 'Error: $e';
+      busyFlag.value = false;
+      serversLoading.value = false;
+      update();
+    }
+  }
+
+  /// Get VPS server details by ID
+  Future<VpsServer?> getVpsServerById(int vpsId) async {
+    try {
+      log("🔍 Looking for VPS server with ID: $vpsId");
+
+      for (var server in srvList) {
+        for (var subServer in server.subServers) {
+          if (subServer.vpsServer.id == vpsId) {
+            log("✅ Found VPS server: ${subServer.vpsServer.name}");
+            return subServer.vpsServer;
+          }
+        }
+      }
+
+      log("❌ VPS server with ID $vpsId not found");
+      return null;
+    } catch (e) {
+      log("Error getting VPS server by ID: $e");
+      return null;
+    }
+  }
+
+  /// Load test VPS servers (for testing purposes)
+  Future<void> loadTestServers() async {
+    try {
+      log("📊 Loading test VPS servers...");
+      busyFlag.value = true;
+      update();
+
+      // Create test data
+      final testVpsServers = [
+        VpsServer(
+          id: 1,
+          name: "US-East-1",
+          ipAddress: "192.168.1.1",
+          domain: "us-east-1.vpn.test",
+        ),
+        VpsServer(
+          id: 2,
+          name: "US-West-1",
+          ipAddress: "192.168.1.2",
+          domain: "us-west-1.vpn.test",
+        ),
+      ];
+
+      // Add test VPS servers to first server's subServers
+      if (srvList.isNotEmpty) {
+        srvList[0].subServers.clear();
+        for (var vps in testVpsServers) {
+          SubServer subServer = SubServer(
+            id: vps.id,
+            serverId: srvList[0].id,
+            name: vps.name,
+            status: 1,
+            vpsServer: vps,
+          );
+          srvList[0].subServers.add(subServer);
+        }
+      }
+
+      log("✅ Test servers loaded successfully");
+      busyFlag.value = false;
+      update();
+    } catch (e) {
+      log("❌ Error loading test servers: $e");
+      busyFlag.value = false;
+      update();
+    }
+  }
+
+  /// Check VPS server health/availability
+  Future<bool> checkVpsServerHealth(String domain) async {
+    try {
+      log("🏥 Checking health of VPS server: $domain");
+
+      final stopwatch = Stopwatch()..start();
+      final response = await http.get(
+        Uri.parse('http://$domain:5000/health'),
+      ).timeout(const Duration(seconds: 5));
+
+      stopwatch.stop();
+      log("   Response time: ${stopwatch.elapsedMilliseconds}ms");
+
+      if (response.statusCode == 200) {
+        log("✅ VPS server $domain is healthy");
+        return true;
+      } else {
+        log("⚠️  VPS server $domain returned status ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      log("❌ VPS server $domain is unreachable: $e");
+      return false;
+    }
+  }
+
+  /// Get VPS server statistics
+  Future<Map<String, dynamic>?> getVpsServerStats(String domain) async {
+    try {
+      log("📈 Fetching stats for VPS server: $domain");
+
+      var headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-API-Token': 'a3f7b9c2-d1e5-4f68-8a0b-95c6e7f4d8a1',
+      };
+
+      final response = await http.get(
+        Uri.parse('http://$domain:5000/api/stats'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        log("✅ VPS server stats retrieved successfully");
+        return data;
+      } else {
+        log("❌ Failed to get VPS stats. Status: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      log("❌ Error fetching VPS server stats: $e");
+      return null;
+    }
+  }
+
+  /// Disconnect from current VPS server
+  Future<bool> disconnectVpsServer() async {
+    try {
+      log("🔌 Disconnecting from VPS server...");
+
+      if (selectedProtocol == Proto.wireguard) {
+        return await dWireguard();
+      } else if (selectedProtocol == Proto.ikeav2) {
+        await dIkeav2(Get.context!);
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      log("❌ Error disconnecting from VPS server: $e");
+      return false;
+    }
+  }
+
+  /// Test connection to a specific VPS server
+  Future<bool> testVpsConnection(String serverUrl) async {
+    try {
+      log("🧪 Testing connection to VPS server: $serverUrl");
+
+      final response = await http.get(
+        Uri.parse('http://$serverUrl:5000/api/test'),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        log("✅ Connection test passed for $serverUrl");
+        return true;
+      } else {
+        log("❌ Connection test failed for $serverUrl");
+        return false;
+      }
+    } catch (e) {
+      log("❌ Connection test error for $serverUrl: $e");
+      return false;
+    }
+  }
+
+  /// Check backend connection and server availability
+  Future<bool> checkBackendConnection() async {
+    try {
+      log("🔍 Checking backend connection...");
+      
+      final response = await http.get(
+        Uri.parse(Utils.GET_SERVERS),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        log("✅ Backend connection successful");
+        return true;
+      } else {
+        log("❌ Backend returned status: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      log("❌ Backend connection failed: $e");
+      return false;
+    }
+  }
+
+  /// Connect to a specific VPS server using its credentials
+  Future<bool> connectToVpsServer(VpsServer vps, BuildContext context) async {
+    try {
+      log("🔌 Connecting to VPS server: ${vps.name} (${vps.domain})");
+      busyFlag.value = true;
+      update();
+
+      // Validate VPS server has required connection info
+      if (vps.domain.isEmpty || vps.ipAddress.isEmpty) {
+        log("❌ VPS server missing domain or IP address");
+        showCustomSnackBar(
+          context,
+          EvaIcons.infoOutline,
+          'Connection Error',
+          'VPS server configuration incomplete',
+          Colors.red,
+        );
+        busyFlag.value = false;
+        update();
+        return false;
+      }
+
+      // Register user in VPS if needed (using domain as server URL)
+      log("📝 Registering user in VPS: ${vps.domain}");
+      bool isRegistered = await registerUserInVPS('http://${vps.domain}:5000');
+      
+      if (!isRegistered) {
+        log("❌ Failed to register user in VPS");
+        showCustomSnackBar(
+          context,
+          EvaIcons.infoOutline,
+          'Registration Error',
+          'Failed to register on VPS server',
+          Colors.red,
+        );
+        busyFlag.value = false;
+        update();
+        return false;
+      }
+
+      // Save current VPS server info
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('selectedVpsId', vps.id);
+      await prefs.setString('selectedVpsDomain', vps.domain);
+      await prefs.setString('selectedVpsName', vps.name);
+      
+      // Store credentials if available
+      if (vps.username != null) {
+        await prefs.setString('vpsUsername', vps.username!);
+      }
+      if (vps.port != null) {
+        await prefs.setInt('vpsPort', vps.port!);
+      }
+
+      log("✅ VPS connection info saved. Starting VPN connection...");
+
+      // Initiate VPN connection using the VPS domain
+      await tVpn(context);
+
+      log("✅ Connected to VPS server: ${vps.name}");
+      showCustomSnackBar(
+        context,
+        EvaIcons.checkmarkCircle2Outline,
+        'Connection Success',
+        'Connected to ${vps.name}',
+        Colors.green,
+      );
+
+      busyFlag.value = false;
+      update();
+      return true;
+
+    } catch (e) {
+      log("❌ Error connecting to VPS server: $e");
+      showCustomSnackBar(
+        context,
+        EvaIcons.infoOutline,
+        'Connection Error',
+        e.toString(),
+        Colors.red,
+      );
+      busyFlag.value = false;
+      update();
+      return false;
+    }
+  }
+
+  /// Get currently connected VPS server info
+  Future<Map<String, dynamic>?> getCurrentVpsServer() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final int? vpsId = prefs.getInt('selectedVpsId');
+      final String? vpsDomain = prefs.getString('selectedVpsDomain');
+      final String? vpsName = prefs.getString('selectedVpsName');
+
+      if (vpsId != null && vpsDomain != null) {
+        return {
+          'id': vpsId,
+          'domain': vpsDomain,
+          'name': vpsName ?? 'Unknown',
+        };
+      }
+      return null;
+    } catch (e) {
+      log("Error getting current VPS server: $e");
+      return null;
+    }
+  }
+
+  /// Disconnect from VPS server and clear saved info
+  Future<bool> disconnectFromVpsServer(BuildContext context) async {
+    try {
+      log("🔌 Disconnecting from VPS server...");
+      
+      // Disconnect VPN
+      bool disconnected = await disconnectVpsServer();
+
+      if (disconnected) {
+        // Clear saved VPS info
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.remove('selectedVpsId');
+        await prefs.remove('selectedVpsDomain');
+        await prefs.remove('selectedVpsName');
+        await prefs.remove('vpsUsername');
+        await prefs.remove('vpsPort');
+
+        log("✅ Disconnected from VPS server");
+        return true;
+      } else {
+        log("⚠️  Disconnect request sent but status uncertain");
+        return true;
+      }
+    } catch (e) {
+      log("❌ Error disconnecting from VPS server: $e");
       return false;
     }
   }

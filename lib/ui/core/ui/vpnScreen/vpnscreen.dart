@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:safenetvpn/ui/core/ui/premium/premium.dart' show Premium;
 import 'package:safenetvpn/view_model/homeGateModel.dart'
     show HomeGateModel, MyVpnConnectState;
+import 'package:safenetvpn/ui/core/ui/debugscreen/backend_test_screen.dart';
 
 class VpnScreen extends StatefulWidget {
   const VpnScreen({super.key});
@@ -37,8 +38,9 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
           // Main Content
           SafeArea(
             child: Obx(
-              () => Column(
-                children: [
+              () => SingleChildScrollView(
+                child: Column(
+                  children: [
                   // Header
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -385,7 +387,9 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                   SizedBox(height: 20),
                   // Connection Button
                   GestureDetector(
-                    onTap: () {},
+                    onTap: () async {
+                      await provider.tVpn(context);
+                    },
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -542,7 +546,114 @@ class _VpnScreenState extends State<VpnScreen> with TickerProviderStateMixin {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                ],
+                  
+                  const SizedBox(height: 30),
+                  
+                  // Debug Info - Shows backend connection status
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BackendTestScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1A1A),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF333333), width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Backend Status',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.grey[600],
+                                size: 12,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Servers: ${provider.srvList.length}',
+                            style: TextStyle(
+                              color: provider.srvList.isEmpty ? Colors.red : Colors.green,
+                              fontSize: 11,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Loading: ${provider.serversLoading.value}',
+                            style: const TextStyle(
+                              color: Colors.yellow,
+                              fontSize: 11,
+                            ),
+                          ),
+                          if (provider.serversError.value.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Error: ${provider.serversError.value}',
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 10,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          Center(
+                            child: Text(
+                              'Tap to open test console →',
+                              style: TextStyle(
+                                color: Colors.blue[300],
+                                fontSize: 10,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Test button to load mock servers
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              provider.loadTestServers();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Loading test servers...'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.science, size: 14),
+                            label: const Text('Load Test Servers'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              textStyle: const TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ],
+                ),
               ),
             ),
           ),

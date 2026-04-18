@@ -44,7 +44,7 @@ dependencies:
   dart_ping: ^9.0.1
   cached_network_image: ^3.4.1
   percent_indicator: ^4.2.5
-  google_fonts: ^6.3.1
+  google_fonts: ^8.0.0
   window_manager: ^0.4.3
   url_launcher: ^6.3.2
   firebase_core: ^4.3.0

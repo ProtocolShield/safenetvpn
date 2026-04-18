@@ -12,40 +12,44 @@ class Onboarding2 extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              children: [
-                SizedBox(height: 60),
-                Image.asset(
-                  'assets/images/onboarding2.png',
-                  fit: BoxFit.cover,
-                  scale: 3.5,
-                ),
-                SizedBox(height: 20),
-                Center(
-                  child: Text(
-                    "Connect to high-speed servers worldwide for streaming, gaming, and browsing without limits.",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                Image.asset(
-                  'assets/images/onboarding2_logo.png',
-                  fit: BoxFit.cover,
-                  scale: 4.0,
-                ),
-                SizedBox(height: 30),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
                   children: [
-                    Image.asset('assets/images/dnsleak.png', scale: 4),
-                    Image.asset('assets/images/vpnserver.png', scale: 4),
+                    SizedBox(height: 60),
+                    Image.asset(
+                      'assets/images/onboarding2.png',
+                      fit: BoxFit.cover,
+                      scale: 3.5,
+                    ),
+                    SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        "Connect to high-speed servers worldwide for streaming, gaming, and browsing without limits.",
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Image.asset(
+                      'assets/images/onboarding2_logo.png',
+                      fit: BoxFit.cover,
+                      scale: 4.0,
+                    ),
+                    SizedBox(height: 30),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Image.asset('assets/images/dnsleak.png', scale: 4),
+                        Image.asset('assets/images/vpnserver.png', scale: 4),
+                      ],
+                    ),
+
+                    Image.asset('assets/images/webserver.png', scale: 4),
                   ],
                 ),
-
-                Image.asset('assets/images/webserver.png', scale: 4),
-              ],
+              ),
             ),
 
             Column(

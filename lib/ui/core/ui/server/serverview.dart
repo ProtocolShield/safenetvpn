@@ -173,97 +173,132 @@ class _ServerviewState extends State<Serverview> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              // Flag
-                              Row(
-                                children: [
-                                  Center(
-                                    child: CachedNetworkImage(
-                                      imageUrl: server.image,
-                                      height: 20,
-                                    ),
-                                  ),
-                                  
-                                  const SizedBox(width: 10),
-                                  
-                                  // Country Name
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        server.name,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      ShaderMask(
-                                        shaderCallback: (Rect bounds) {
-                                          return const LinearGradient(
-                                            colors: [Colors.purple, Colors.blue],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ).createShader(
-                                            Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-                                          );
-                                        },
-                                        blendMode: BlendMode.srcIn,
-                                        child: Text(
-                                          server.type,
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
+                              // Flag and Server Info
+                              Expanded(
+                                flex: 2,
+                                child: Row(
+                                  children: [
+                                    Center(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: CachedNetworkImage(
+                                          imageUrl: server.image,
+                                          height: 20,
+                                          width: 30,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) => Container(
+                                            height: 20,
+                                            width: 30,
+                                            color: const Color(0xFF333333),
+                                          ),
+                                          errorWidget: (context, url, error) => Container(
+                                            height: 20,
+                                            width: 30,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF333333),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: const Icon(
+                                              Icons.image_not_supported,
+                                              color: Color(0xFF888888),
+                                              size: 12,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                    
+                                    const SizedBox(width: 10),
+                                    
+                                    // Country Name
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            server.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          ShaderMask(
+                                            shaderCallback: (Rect bounds) {
+                                              return const LinearGradient(
+                                                colors: [Colors.purple, Colors.blue],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ).createShader(
+                                                Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                                              );
+                                            },
+                                            blendMode: BlendMode.srcIn,
+                                            child: Text(
+                                              server.type,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
 
-                              // Signal Strength
-                              Row(
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        Icons.speed,
-                                        color: Colors.green,
-                                        size: 16,
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        "${server.subServers[provider.subSrvIndex.value].vpsServer.latency} ms",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
+                              // Signal Strength and Select Button
+                              Expanded(
+                                flex: 1,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.speed,
+                                          color: Colors.green,
+                                          size: 16,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  
-                                  const SizedBox(width: 5),
-                                  
-                                  // Connect Button
-                                  GestureDetector(
-                                    onTap: () {},
-                                    child: Container(
-                                      width: 24,
-                                      height: 24,
-                                      padding: EdgeInsets.all(3.0),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Color(0xFF3A3A3A),
-                                          width: 1,
+                                        const SizedBox(width: 3),
+                                        Text(
+                                          server.subServers.isNotEmpty
+                                            ? "${server.subServers[0].vpsServer.latency} ms"
+                                            : "-- ms",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
                                         ),
-                                      ),
-                                      child:
-                                          provider.srvIndex.value ==
-                                              originalIndex
+                                      ],
+                                    ),
+                                    
+                                    const SizedBox(width: 5),
+                                    
+                                    // Connect Button
+                                    GestureDetector(
+                                      onTap: () {},
+                                      child: Container(
+                                        width: 24,
+                                        height: 24,
+                                        padding: const EdgeInsets.all(3.0),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: const Color(0xFF3A3A3A),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: provider.srvIndex.value == originalIndex
                                           ? Container(
-                                              decoration: BoxDecoration(
+                                              decoration: const BoxDecoration(
                                                 gradient: LinearGradient(
                                                   colors: [
                                                     Colors.blue,
@@ -274,9 +309,10 @@ class _ServerviewState extends State<Serverview> {
                                               ),
                                             )
                                           : null,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
