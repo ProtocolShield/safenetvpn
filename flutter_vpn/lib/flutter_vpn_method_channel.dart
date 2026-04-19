@@ -14,6 +14,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_vpn/state.dart';
+import 'package:flutter_vpn/windows_vpn_bridge.dart';
 
 import 'flutter_vpn_platform_interface.dart';
 
@@ -79,6 +80,21 @@ class MethodChannelFlutterVpn extends FlutterVpnPlatform {
   /// Disconnect and stop VPN service.
   @override
   Future<void> disconnect() async {
+    if (Platform.isWindows) {
+      print("🔌 [WINDOWS] Disconnecting VPN...");
+      try {
+        final result = await WindowsVpnBridge.disconnectVpn();
+        if (!result) {
+          print("⚠️  [WINDOWS] Disconnect may have failed");
+        }
+        print("✅ [WINDOWS] VPN disconnected!");
+        return;
+      } catch (e) {
+        print("❌ [WINDOWS] VPN disconnection error: $e");
+        rethrow;
+      }
+    }
+    
     await methodChannel.invokeMethod('disconnect');
   }
 
@@ -126,21 +142,40 @@ class MethodChannelFlutterVpn extends FlutterVpnPlatform {
     int? port,
     bool? killSwitch,
     String? dnsServers,
-  }) async =>
-      await methodChannel.invokeMethod('connect', {
-        'Type': 'IKEv2',
-        'Server': server,
-        'Username': username,
-        'Password': password,
-        if (selectedApps != null) 'SelectedApps': selectedApps,
-        if (appHandling != null) 'AppHandling': appHandling,
-        'Secret': '',
-        'Name': name ?? server,
-        if (dnsServers != null) 'dnsServers': dnsServers,
-        if (mtu != null) 'mtu': mtu,
-        if (port != null) 'port': port,
-        if (killSwitch != null) 'killSwitch': killSwitch.toString(),
-      });
+  }) async {
+    // Windows implementation using native VPN API
+    if (Platform.isWindows) {
+      print("🔌 [WINDOWS] Connecting to VPN via Windows RAS API...");
+      try {
+        final result = await WindowsVpnBridge.connectVpn(server, username, password);
+        if (!result) {
+          final error = await WindowsVpnBridge.getLastError();
+          throw Exception('VPN Connection Failed: $error');
+        }
+        print("✅ [WINDOWS] VPN connection successful!");
+        return;
+      } catch (e) {
+        print("❌ [WINDOWS] VPN connection error: $e");
+        rethrow;
+      }
+    }
+    
+    // Android/iOS implementation using method channels
+    await methodChannel.invokeMethod('connect', {
+      'Type': 'IKEv2',
+      'Server': server,
+      'Username': username,
+      'Password': password,
+      if (selectedApps != null) 'SelectedApps': selectedApps,
+      if (appHandling != null) 'AppHandling': appHandling,
+      'Secret': '',
+      'Name': name ?? server,
+      if (dnsServers != null) 'dnsServers': dnsServers,
+      if (mtu != null) 'mtu': mtu,
+      if (port != null) 'port': port,
+      if (killSwitch != null) 'killSwitch': killSwitch.toString(),
+    });
+  }
 
   /// Connect to VPN. (IPSec)
   ///

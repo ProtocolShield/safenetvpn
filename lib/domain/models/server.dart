@@ -77,12 +77,13 @@ class Server {
       }
       
       // Temporary fallback: use server ID as identifier if no IP/domain
-      // This should be replaced with actual VPS data from backend
+      // This is used when sub_servers are empty; VPS servers are handled separately via fetchVpsServers()
       if (ip.isEmpty && domain.isEmpty) {
         // Try to use server ID or name - this is temporary until backend provides real IPs
         int serverId = json['id'] ?? 0;
         domain = 'vps-$serverId.psvpn.local'; // placeholder domain
-        print("⚠️  WARNING: No IP/domain in server response. Using placeholder: $domain");
+        // Note: This warning is suppressed because VPS servers are now handled by fetchVpsServers()
+        // print("⚠️  WARNING: No IP/domain in server response. Using placeholder: $domain");
       }
       
       // Create a default SubServer with the server as VPS

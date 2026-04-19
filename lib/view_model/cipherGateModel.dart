@@ -83,9 +83,11 @@ class CipherGateModel extends GetxController {
 
       var body = jsonDecode(rsp.body);
       log("Alpha Response: $body");
+      print("📡 [LOGIN] Response status: ${rsp.statusCode}");
 
       if (rsp.statusCode == 200 || rsp.statusCode == 201) {
         if (body["status"] == true) {
+          print("✅ [LOGIN] Login status is true, storing credentials...");
           SharedPreferences box = await SharedPreferences.getInstance();
           await box.setBool('k', true);
           await box.setString('e', body['user']['email']);
@@ -94,6 +96,9 @@ class CipherGateModel extends GetxController {
           await box.setString('p', idB.text);
           await box.setString('uid', body['user']['id'].toString());
           await box.setString('t', body["access_token"]);
+          
+          print("🔑 [LOGIN] Token stored: ${body["access_token"].substring(0, 20)}...");
+          print("👤 [LOGIN] User: ${body['user']['email']} (${body['user']['slug']})");
 
           // Send user name to analytics
           AnalyticsService().setUserProperty('user_name', body['user']['slug']);
@@ -118,8 +123,13 @@ class CipherGateModel extends GetxController {
             Colors.green,
           );
 
+          print("✅ [LOGIN] Login successful, token stored");
           var q = Get.find<HomeGateModel>();
           q.onItemTapped(0);
+          
+          // Fetch VPS servers using the token
+          print("🔄 [LOGIN] Starting to fetch VPS servers...");
+          q.fetchVpsServers();
 
           Navigator.of(
             ctx,
