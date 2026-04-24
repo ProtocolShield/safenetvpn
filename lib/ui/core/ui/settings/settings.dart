@@ -3,9 +3,6 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:safenetvpn/ui/core/ui/account/account.dart' show Account;
-import 'package:safenetvpn/ui/core/ui/assistant/assistant.dart'
-    show AiAssistantScreen;
-import 'package:safenetvpn/ui/core/ui/community/community.dart' show Community;
 import 'package:safenetvpn/ui/core/ui/feedback/feedback.dart' show FeedbackView;
 import 'package:safenetvpn/ui/core/ui/privacypolicy/privacypolicy.dart'
     show Privacypolicy;
@@ -124,20 +121,6 @@ class Settings extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => AiAssistantScreen(),
-                        ),
-                      );
-                    },
-                    child: SettingsWidget(
-                      imageData: 'assets/images/ai_assistant.png',
-                      title: "Ai Assistant",
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
                         MaterialPageRoute(builder: (context) => FeedbackView()),
                       );
                     },
@@ -147,18 +130,6 @@ class Settings extends StatelessWidget {
                     ),
                   ),
 
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => Community()),
-                      );
-                    },
-                    child: SettingsWidget(
-                      imageData: "assets/images/community.png",
-                      title: "Community",
-                    ),
-                  ),
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
