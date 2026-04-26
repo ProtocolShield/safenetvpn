@@ -1,4 +1,4 @@
-﻿// ignore_for_file: file_names, use_build_context_synchronously
+﻿ // ignore_for_file: file_names, use_build_context_synchronously
 import 'dart:convert';
 import 'package:get/get.dart';
 import 'dart:async' show Timer, TimeoutException;
@@ -108,18 +108,70 @@ class HomeGateModel extends GetxController {
     update();
   }
 
-  setProtocol(Proto protocol) async {
-    selectedProtocol.value = protocol;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString(
-      'selectedProtocol',
-      protocol == Proto.ikeav2 ? 'ikeav2' : 'wireguard',
-    );
-    update();
 
-    // Ensure stage polling reacts to protocol change
-    sGettingStages();
+  setProtocol(Proto protocol) async {
+    // Prevent concurrent protocol switches
+    if (busyFlag.value) {
+      print("⚠️  [PROTOCOL] Switch already in progress, ignoring");
+      return;
+    }
+
+    print("🔄 [PROTOCOL] SWITCH INITIATED - Target: ${protocol == Proto.wireguard ? 'WireGuard' : 'IKEv2'}");
+    busyFlag.value = true;
+    
+    try {
+      // ✅ AUTOMATIC DISCONNECT + STATE CLEANUP
+      if (vpnConnectionState.value != MyVpnConnectState.disconnected) {
+        print("🔌 [PROTOCOL] FORCE DISCONNECTING active VPN...");
+        
+        try {
+          if (selectedProtocol.value == Proto.wireguard) {
+            print("🔌 [PROTOCOL] Stopping WireGuard");
+            await dWireguard();
+          } else if (selectedProtocol.value == Proto.ikeav2) {
+            print("🔌 [PROTOCOL] Stopping IKEv2");
+            if (Get.context != null) {
+              await dIkeav2(Get.context!);
+            }
+          }
+          print("✅ [PROTOCOL] Current VPN disconnected");
+          // Wait for clean state
+          await Future.delayed(const Duration(milliseconds: 1500));
+        } catch (e) {
+          print("⚠️  [PROTOCOL] Disconnect error (continuing): $e");
+          log("⚠️  Disconnect error: $e");
+          // Force state reset even if disconnect fails
+          vpnConnectionState.value = MyVpnConnectState.disconnected;
+          update();
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+      }
+
+      // Update protocol (atomic)
+      selectedProtocol.value = protocol;
+      print("✅ [PROTOCOL] Protocol changed to ${protocol == Proto.wireguard ? 'WireGuard' : 'IKEv2'}");
+
+      // Persist immediately
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('selectedProtocol', protocol == Proto.ikeav2 ? 'ikeav2' : 'wireguard');
+      
+      // Cancel old timer and restart monitoring with NEW protocol
+      print("🔄 [PROTOCOL] Restarting stage polling...");
+      _stageTimer?.cancel();
+      _stageTimer = null;
+      await Future.delayed(const Duration(milliseconds: 300));
+      sGettingStages();
+      
+      print("✅ [PROTOCOL] SWITCH COMPLETE - Ready to connect with new protocol");
+    } catch (e) {
+      print("❌ [PROTOCOL] Error during switch: $e");
+      log("❌ Protocol switch error: $e");
+    } finally {
+      busyFlag.value = false;
+      update();
+    }
   }
+
 
   void setqueryText(String text, String selectedTab) {
     queryText.value = text;
@@ -648,44 +700,70 @@ class HomeGateModel extends GetxController {
   // }
 
   Future<void> tVpn(BuildContext context) async {
-    // Logic to toggle VPN connection
-    
-    // Check if a VPS server is selected - if so, use VPS connection flow
-    if (selectedVpsServer.value != null) {
-      print("🔌 [VPN] VPS server selected: ${selectedVpsServer.value!.name}");
-      
-      if (vpnConnectionState.value == MyVpnConnectState.connected ||
-          vpnConnectionState.value == MyVpnConnectState.connecting) {
-        print("🔌 [VPN] Disconnecting from VPS");
-        await disconnectVpsServer();
-      } else if (vpnConnectionState.value == MyVpnConnectState.disconnected) {
-        print("🔌 [VPN] Connecting to VPS server");
-        await connectToVpsServer(selectedVpsServer.value!, context);
-      }
+    // Prevent concurrent operations
+    if (busyFlag.value) {
+      log("⚠️  [VPN] Operation already in progress, ignoring request");
       return;
     }
-    
-    // Otherwise, use regular server connection flow
-    print("🔌 [VPN] Regular server selected, using standard connection");
-    var domain = gtd();
-    if (selectedProtocol == Proto.wireguard) {
-      if (vpnConnectionState.value == MyVpnConnectState.connected ||
-          vpnConnectionState.value == MyVpnConnectState.connecting) {
-        await dWireguard();
-      } else if (vpnConnectionState.value == MyVpnConnectState.disconnected) {
-        await cWireguard(domain, context);
-      }
-    } else if (selectedProtocol == Proto.ikeav2) {
-      if (vpnConnectionState.value == MyVpnConnectState.connected ||
-          vpnConnectionState.value == MyVpnConnectState.connecting) {
-        await dIkeav2(context);
-      } else if (vpnConnectionState.value == MyVpnConnectState.disconnected) {
-        await cIkeav2(domain, context);
-      }
-    }
-  }
 
-  gtd() {
+    busyFlag.value = true;
+    print("🔌 [VPN] tVpn() called - Current state: $vpnConnectionState, Protocol: ${selectedProtocol.value == Proto.wireguard ? 'WireGuard' : 'IKEv2'}");
+    
+    try {
+      // Check if a VPS server is selected
+      if (selectedVpsServer.value != null) {
+        print("🔌 [VPN] VPS server selected: ${selectedVpsServer.value!.name}");
+        
+        if (vpnConnectionState.value == MyVpnConnectState.connected ||
+            vpnConnectionState.value == MyVpnConnectState.connecting) {
+          print("🔌 [VPN] Disconnecting from VPS");
+          await disconnectVpsServer();
+        } else if (vpnConnectionState.value == MyVpnConnectState.disconnected) {
+          print("🔌 [VPN] Connecting to VPS server");
+          await connectToVpsServer(selectedVpsServer.value!, context);
+        }
+        busyFlag.value = false;
+        return;
+      }
+      
+      // Regular server connection flow
+      var domain = gtd();
+      print("🔌 [VPN] Regular server - Domain: $domain, Protocol: ${selectedProtocol.value == Proto.wireguard ? 'WireGuard' : 'IKEv2'}");
+      
+      // Ensure state is correct before proceeding
+      final currentState = vpnConnectionState.value;
+      
+      if (selectedProtocol.value == Proto.wireguard) {
+        if (currentState == MyVpnConnectState.connected ||
+            currentState == MyVpnConnectState.connecting) {
+          print("🔌 [VPN] Disconnecting WireGuard");
+          await dWireguard();
+        } else if (currentState == MyVpnConnectState.disconnected) {
+          print("🔌 [VPN] Connecting WireGuard");
+          await cWireguard(domain, context);
+        }
+      } else if (selectedProtocol.value == Proto.ikeav2) {
+        if (currentState == MyVpnConnectState.connected ||
+            currentState == MyVpnConnectState.connecting) {
+          print("🔌 [VPN] Disconnecting IKEv2");
+          await dIkeav2(context);
+        } else if (currentState == MyVpnConnectState.disconnected) {
+          print("🔌 [VPN] Connecting IKEv2");
+          await cIkeav2(domain, context);
+        }
+      }
+      
+      print("🔌 [VPN] tVpn() completed successfully");
+    } catch (e) {
+      log("❌ [VPN] Error in tVpn: $e");
+      print("❌ [VPN] Error: $e");
+      vpnConnectionState.value = MyVpnConnectState.disconnected;
+      update();
+    } finally {
+      busyFlag.value = false;
+      update();
+    }
+  }  gtd() {
     return srvList[srvIndex.value]
         .subServers[subSrvIndex.value]
         .vpsServer
@@ -693,43 +771,67 @@ class HomeGateModel extends GetxController {
   }
 
   sGettingStages() {
-    // Avoid spawning multiple timers
-    _stageTimer ??= Timer.periodic(const Duration(seconds: 1), (Timer t) async {
-      if (selectedProtocol == Proto.wireguard) {
-        await listenWire();
-      } else if (selectedProtocol == Proto.ikeav2) {
-        await lIkeav2Stages();
+    print("🔄 [STAGE] sGettingStages() called - Current protocol: ${selectedProtocol.value == Proto.wireguard ? 'WireGuard' : 'IKEv2'}");
+    
+    // Cancel existing timer to avoid multiples
+    _stageTimer?.cancel();
+    _stageTimer = null;
+    
+    print("🔄 [STAGE] Starting new polling timer");
+    // Start new timer with error handling
+    _stageTimer = Timer.periodic(const Duration(seconds: 1), (Timer t) async {
+      try {
+        if (selectedProtocol.value == Proto.wireguard) {
+          await listenWire();
+        } else if (selectedProtocol.value == Proto.ikeav2) {
+          await lIkeav2Stages();
+        }
+      } catch (e) {
+        log("❌ [STAGE-POLL] Error in stage polling: $e");
+        // Continue polling despite error
       }
     });
+    print("🔄 [STAGE] Polling timer started");
   }
 
-  Future<void> lIkeav2Stages() async {
-    FlutterVpn.currentState.then((FlutterVpnState status) {
+Future<void> lIkeav2Stages() async {
+    try {
+      final status = await FlutterVpn.currentState;
+      final errorState = await FlutterVpn.charonErrorState;
+      
       if (cfgLoading.value) {
         vpnConnectionState.value = MyVpnConnectState.connecting;
         return;
-      } else {
-        switch (status) {
-          case FlutterVpnState.connecting:
-            vpnConnectionState.value = MyVpnConnectState.connecting;
-            break;
-          case FlutterVpnState.connected:
-            vpnConnectionState.value = MyVpnConnectState.connected;
-            break;
-          case FlutterVpnState.disconnecting:
-            vpnConnectionState.value = MyVpnConnectState.disconnecting;
-            break;
-          case FlutterVpnState.disconnected:
-            vpnConnectionState.value = MyVpnConnectState.disconnected;
-            break;
-          default:
-            vpnConnectionState.value = MyVpnConnectState.disconnected;
-            break;
-        }
-        log("IKEv2 Stage: $vpnConnectionState");
-        update();
+      } 
+      
+      if (errorState != null) {
+        log("IKEv2 Charon ERROR: $errorState - Force disconnected");
+        vpnConnectionState.value = MyVpnConnectState.disconnected;
+        return;
       }
-    });
+      
+      switch (status) {
+        case FlutterVpnState.connecting:
+          vpnConnectionState.value = MyVpnConnectState.connecting;
+          break;
+        case FlutterVpnState.connected:
+          vpnConnectionState.value = MyVpnConnectState.connected;
+          break;
+        case FlutterVpnState.disconnecting:
+          vpnConnectionState.value = MyVpnConnectState.disconnecting;
+          break;
+        case FlutterVpnState.disconnected:
+        case FlutterVpnState.error:
+          vpnConnectionState.value = MyVpnConnectState.disconnected;
+          break;
+      }
+      log("IKEv2 Stage: $status | Error: $errorState");
+      update();
+    } catch (e) {
+      log("IKEv2 state check error: $e");
+      vpnConnectionState.value = MyVpnConnectState.disconnected;
+      update();
+    }
   }
 
   Future<MyVpnConnectState> listenWire() async {
@@ -963,12 +1065,14 @@ class HomeGateModel extends GetxController {
     try {
       busyFlag.value = true;
       vpnConnectionState.value = MyVpnConnectState.disconnecting;
-      update();
-
+      update(); // Immediate UI update
+      
+      print("🔌 [DISCONNECT-WG] Starting WireGuard disconnection");
       final success = await _wireguardEngine.stopWireguard();
 
       if (success) {
         log("Disconnected from WireGuard VPN");
+        print("✅ [DISCONNECT-WG] WireGuard stopped successfully");
 
         // Calculate session duration
         final prefs = await SharedPreferences.getInstance();
@@ -977,12 +1081,11 @@ class HomeGateModel extends GetxController {
           final connectTime = DateTime.parse(connectTimeStr);
           final duration = DateTime.now().difference(connectTime);
 
-          // Track session end with duration
           AnalyticsService().trackEvent(
             'vpn_session_end',
             parameters: {
               'protocol': 'WireGuard',
-              'server': srvList[srvIndex.value].name,
+              'server': srvList.isNotEmpty ? srvList[srvIndex.value].name : 'unknown',
               'platform': getPlatformName(),
               'duration_seconds': duration.inSeconds.toString(),
               'timestamp': DateTime.now().toIso8601String(),
@@ -990,33 +1093,31 @@ class HomeGateModel extends GetxController {
           );
         }
 
-        // Track VPN disconnection
         AnalyticsService().trackVpnDisconnection(
           protocol: 'WireGuard',
-          serverLocation: srvList[srvIndex.value].name,
+          serverLocation: srvList.isNotEmpty ? srvList[srvIndex.value].name : 'unknown',
         );
 
         busyFlag.value = false;
         vpnConnectionState.value = MyVpnConnectState.disconnected;
         stopMonitor();
-        update();
-
+        update(); // Final UI update
+        
+        print("✅ [DISCONNECT-WG] State updated to disconnected");
         return true;
       } else {
+        print("⚠️  [DISCONNECT-WG] Stop returned false");
         busyFlag.value = false;
         vpnConnectionState.value = MyVpnConnectState.disconnected;
         update();
-
         return false;
       }
     } catch (e) {
       log("Error in disconnectWireguard: $e");
+      print("❌ [DISCONNECT-WG] Exception: $e");
       busyFlag.value = false;
       vpnConnectionState.value = MyVpnConnectState.disconnected;
       update();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        update();
-      });
       return false;
     }
   }
@@ -1138,15 +1239,17 @@ class HomeGateModel extends GetxController {
     try {
       log("Disconnecting IKEv2");
       vpnConnectionState.value = MyVpnConnectState.disconnecting;
-      update();
+      update(); // Immediate UI update
 
+      print("🔌 [DISCONNECT-IKE] Starting IKEv2 disconnection");
       await ikeav2Engine.disconnect();
       stopMonitor();
 
-      // Add a short delay to ensure engine is ready for next connection
+      // Wait for clean state
       await Future.delayed(const Duration(milliseconds: 700));
 
       log("IKEv2 disconnected successfully");
+      print("✅ [DISCONNECT-IKE] IKEv2 disconnected");
 
       // Calculate session duration
       final prefs = await SharedPreferences.getInstance();
@@ -1155,12 +1258,11 @@ class HomeGateModel extends GetxController {
         final connectTime = DateTime.parse(connectTimeStr);
         final duration = DateTime.now().difference(connectTime);
 
-        // Track session end with duration
         AnalyticsService().trackEvent(
           'vpn_session_end',
           parameters: {
             'protocol': 'IKEv2',
-            'server': srvList[srvIndex.value].name,
+            'server': srvList.isNotEmpty ? srvList[srvIndex.value].name : 'unknown',
             'platform': getPlatformName(),
             'duration_seconds': duration.inSeconds.toString(),
             'timestamp': DateTime.now().toIso8601String(),
@@ -1168,34 +1270,40 @@ class HomeGateModel extends GetxController {
         );
       }
 
-      // Track VPN disconnection
       AnalyticsService().trackVpnDisconnection(
         protocol: 'IKEv2',
-        serverLocation: srvList[srvIndex.value].name,
+        serverLocation: srvList.isNotEmpty ? srvList[srvIndex.value].name : 'unknown',
       );
 
       vpnConnectionState.value = MyVpnConnectState.disconnected;
-      update();
+      update(); // Final UI update
+      
+      print("✅ [DISCONNECT-IKE] State updated to disconnected");
 
-      showCustomSnackBar(
-        context,
-        EvaIcons.checkmarkCircle2Outline,
-        'Disconnection Success',
-        'IKEv2 disconnected successfully',
-        Colors.red,
-      );
+      if (context.mounted) {
+        showCustomSnackBar(
+          context,
+          EvaIcons.checkmarkCircle2Outline,
+          'Disconnected',
+          'VPN disconnected successfully',
+          Colors.green,
+        );
+      }
     } catch (e) {
       log("Error disconnecting IKEv2: $e");
+      print("❌ [DISCONNECT-IKE] Exception: $e");
       vpnConnectionState.value = MyVpnConnectState.disconnected;
       update();
 
-      showCustomSnackBar(
-        context,
-        EvaIcons.infoOutline,
-        'Disconnection Error',
-        e.toString(),
-        Colors.red,
-      );
+      if (context.mounted) {
+        showCustomSnackBar(
+          context,
+          EvaIcons.infoOutline,
+          'Disconnect Completed',
+          'VPN disconnected (with status: $e)',
+          Colors.orange,
+        );
+      }
     }
   }
 
